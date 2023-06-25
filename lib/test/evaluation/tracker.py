@@ -8,10 +8,13 @@ import cv2 as cv
 from lib.utils.lmdb_utils import decode_img
 from pathlib import Path
 import numpy as np
+import cv2
 
 
-def trackerlist(name: str, parameter_name: str, dataset_name: str, run_ids = None, display_name: str = None,
-                result_only=False):
+# 修改过给双模态数据的单RGB模态用
+def trackerlist(
+    name: str, parameter_name: str, dataset_name: str, run_ids=None, display_name: str = None, result_only=False, save_suffix="", mode="RGB"
+):
     """Generate list of trackers.
     args:
         name: Name of tracking method.
@@ -21,7 +24,10 @@ def trackerlist(name: str, parameter_name: str, dataset_name: str, run_ids = Non
     """
     if run_ids is None or isinstance(run_ids, int):
         run_ids = [run_ids]
-    return [Tracker(name, parameter_name, dataset_name, run_id, display_name, result_only) for run_id in run_ids]
+    return [
+        Tracker(name, parameter_name, dataset_name, run_id, display_name, result_only, save_suffix=save_suffix, mode=mode)
+        for run_id in run_ids
+    ]
 
 
 class Tracker:
@@ -33,37 +39,63 @@ class Tracker:
         display_name: Name to be displayed in the result plots.
     """
 
-    def __init__(self, name: str, parameter_name: str, dataset_name: str, run_id: int = None, display_name: str = None,
-                 result_only=False, tracker_params=None):
+    def __init__(
+        self,
+        name: str,
+        parameter_name: str,
+        dataset_name: str,
+        run_id: int = None,
+        display_name: str = None,
+        result_only=False,
+        tracker_params=None,
+        debug=None,
+        save_suffix="",
+        mode="RGB",
+    ):
         # assert run_id is None or isinstance(run_id, int)
+        assert mode in ["RGB", "TIR", "Prompt"]  # 用于读取不同的图片；Prompt指 (1-lambda)*RGB + lambda*TIR，具体的指 "Prompting for Multi-Modal Tracking"
+        self.mode = mode
 
         self.name = name
         self.parameter_name = parameter_name
+        self.training_parameter_name = parameter_name # 兼容RGBTtracker的属性
         self.dataset_name = dataset_name
         self.run_id = run_id
         self.display_name = display_name
 
         env = env_settings()
         if self.run_id is None:
-            self.results_dir = '{}/{}/{}'.format(env.results_path, self.name, self.parameter_name)
+            if save_suffix != "":
+                self.results_dir = "{}/{}/{}_{}".format(env.results_path, self.name, self.parameter_name, save_suffix)
+            else:
+                self.results_dir = "{}/{}/{}".format(env.results_path, self.name, self.parameter_name)
         else:
-            self.results_dir = '{}/{}/{}_{}'.format(env.results_path, self.name, self.parameter_name, self.run_id)
+            if save_suffix != "":
+                self.results_dir = "{}/{}/{}_{}_{}".format(env.results_path, self.name, self.parameter_name, save_suffix, self.run_id)
+            else:
+                self.results_dir = "{}/{}/{}_{}".format(env.results_path, self.name, self.parameter_name, self.run_id)
         if result_only:
-            self.results_dir = '{}/{}'.format(env.results_path, self.name)
+            raise NotImplementedError()
+            self.results_dir = "{}/{}".format(env.results_path, self.name)
 
-        tracker_module_abspath = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                              '..', 'tracker', '%s.py' % self.name))
+        tracker_module_abspath = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "tracker", "%s.py" % self.name))
         if os.path.isfile(tracker_module_abspath):
-            tracker_module = importlib.import_module('lib.test.tracker.{}'.format(self.name))
+            tracker_module = importlib.import_module("lib.test.tracker.{}".format(self.name))
             self.tracker_class = tracker_module.get_tracker_class()
         else:
             self.tracker_class = None
 
         self.params = self.get_parameters(tracker_params)
 
-    def create_tracker(self, params):
-        tracker = self.tracker_class(params, self.dataset_name)
-        return tracker
+    def create_tracker(self, device_id, debug=None):  # , params
+        debug_ = debug
+        if debug is None:
+            debug_ = getattr(self.params, "debug", 0)
+        self.params.debug = debug_
+
+        self.tracker = self.tracker_class(self.params, self.dataset_name)
+        self.tracker.network.cuda(device_id)
+        # return tracker
 
     def run_sequence(self, seq, debug=None):
         """Run tracker on sequence.
@@ -74,23 +106,26 @@ class Tracker:
             multiobj_mode: Which mode to use for multiple objects.
         """
         # params = self.get_parameters()
-        params = self.params
+        # params = self.params
 
-        debug_ = debug
-        if debug is None:
-            debug_ = getattr(params, 'debug', 0)
+        # debug_ = debug
+        # if debug is None:
+        #     debug_ = getattr(params, 'debug', 0)
 
-        params.debug = debug_
+        # params.debug = debug_
 
         # Get init information
         init_info = seq.init_info()
+        if self.mode == "TIR":
+            init_info["init_bbox"] = init_info["init_bbox"][1]
+        else: # RGB, Prompt
+            init_info["init_bbox"] = init_info["init_bbox"][0]  # RGBT bbox to RGB bbox
+        # tracker = self.create_tracker(params)
 
-        tracker = self.create_tracker(params)
-
-        output = self._track_sequence(tracker, seq, init_info)
+        output = self._track_sequence(seq, init_info)
         return output
 
-    def _track_sequence(self, tracker, seq, init_info):
+    def _track_sequence(self, seq, init_info):
         # Define outputs
         # Each field in output is a list containing tracker prediction for each frame.
 
@@ -104,11 +139,10 @@ class Tracker:
         # time[i] is either the processing time for frame i, or an OrderedDict containing processing times for each
         # object in frame i
 
-        output = {'target_bbox': [],
-                  'time': []}
-        if tracker.params.save_all_boxes:
-            output['all_boxes'] = []
-            output['all_scores'] = []
+        output = {"target_bbox": [], "time": []}
+        if self.tracker.params.save_all_boxes:
+            output["all_boxes"] = []
+            output["all_scores"] = []
 
         def _store_outputs(tracker_out: dict, defaults=None):
             defaults = {} if defaults is None else defaults
@@ -118,35 +152,56 @@ class Tracker:
                     output[key].append(val)
 
         # Initialize
-        image = self._read_image(seq.frames[0])
+        if self.mode == "RGB":
+            image = self._read_image(seq.frames[0][0])
+        elif self.mode == "TIR":
+            image = self._read_image(seq.frames[0][1])
+            image = cv2.applyColorMap(image, cv2.COLORMAP_JET)
+        elif self.mode == "Prompt":
+            image_v = self._read_image(seq.frames[0][0])
+            image_i = self._read_image(seq.frames[0][1])
+            image_i = cv2.applyColorMap(image_i, cv2.COLORMAP_JET)
+            image = 0.95 * image_v + 0.05 * image_i
+        else:
+            raise ValueError
 
         start_time = time.time()
-        out = tracker.initialize(image, init_info)
+        out = self.tracker.initialize(image, init_info)
         if out is None:
             out = {}
 
         prev_output = OrderedDict(out)
-        init_default = {'target_bbox': init_info.get('init_bbox'),
-                        'time': time.time() - start_time}
-        if tracker.params.save_all_boxes:
-            init_default['all_boxes'] = out['all_boxes']
-            init_default['all_scores'] = out['all_scores']
+        init_default = {"target_bbox": init_info.get("init_bbox"), "time": time.time() - start_time}
+        if self.tracker.params.save_all_boxes:
+            init_default["all_boxes"] = out["all_boxes"]
+            init_default["all_scores"] = out["all_scores"]
 
         _store_outputs(out, init_default)
 
         for frame_num, frame_path in enumerate(seq.frames[1:], start=1):
-            image = self._read_image(frame_path)
-
+            if self.mode == "RGB":
+                image = self._read_image(frame_path[0])
+            elif self.mode == "TIR":
+                image = self._read_image(frame_path[1])
+                image = cv2.applyColorMap(image, cv2.COLORMAP_JET)
+            elif self.mode == "Prompt":
+                image_v = self._read_image(frame_path[0])
+                image_i = self._read_image(frame_path[1])
+                image_i = cv2.applyColorMap(image_i, cv2.COLORMAP_JET)
+                image = 0.95 * image_v + 0.05 * image_i
+            else:
+                raise ValueError
+        
             start_time = time.time()
 
             info = seq.frame_info(frame_num)
-            info['previous_output'] = prev_output
+            info["previous_output"] = prev_output
 
-            out = tracker.track(image, info)
+            out = self.tracker.track(image, info)
             prev_output = OrderedDict(out)
-            _store_outputs(out, {'time': time.time() - start_time})
+            _store_outputs(out, {"time": time.time() - start_time})
 
-        for key in ['target_bbox', 'all_boxes', 'all_scores']:
+        for key in ["target_bbox", "all_boxes", "all_scores"]:
             if key in output and len(output[key]) <= 1:
                 output.pop(key)
 
@@ -163,35 +218,35 @@ class Tracker:
 
         debug_ = debug
         if debug is None:
-            debug_ = getattr(params, 'debug', 0)
+            debug_ = getattr(params, "debug", 0)
         params.debug = debug_
 
         params.tracker_name = self.name
         params.param_name = self.parameter_name
 
-        multiobj_mode = getattr(params, 'multiobj_mode', getattr(self.tracker_class, 'multiobj_mode', 'default'))
+        multiobj_mode = getattr(params, "multiobj_mode", getattr(self.tracker_class, "multiobj_mode", "default"))
 
-        if multiobj_mode == 'default':
+        if multiobj_mode == "default":
             tracker = self.create_tracker(params)
 
-        elif multiobj_mode == 'parallel':
+        elif multiobj_mode == "parallel":
             tracker = MultiObjectWrapper(self.tracker_class, params, self.visdom, fast_load=True)
         else:
-            raise ValueError('Unknown multi object mode {}'.format(multiobj_mode))
+            raise ValueError("Unknown multi object mode {}".format(multiobj_mode))
 
         assert os.path.isfile(videofilepath), "Invalid param {}".format(videofilepath)
         ", videofilepath must be a valid videofile"
 
         output_boxes = []
         cap = cv.VideoCapture(videofilepath)
-        display_name = 'Display: ' + tracker.params.tracker_name
+        display_name = "Display: " + tracker.params.tracker_name
         # cv.namedWindow(display_name, cv.WINDOW_NORMAL | cv.WINDOW_KEEPRATIO)
         # cv.resizeWindow(display_name, 960, 720)
         success, frame = cap.read()
         # cv.imshow(display_name, frame)
 
         def _build_init_info(box):
-            return {'init_bbox': box}
+            return {"init_bbox": box}
 
         if success is not True:
             print("Read frame from {} failed.".format(videofilepath))
@@ -226,7 +281,7 @@ class Tracker:
 
             # Draw box
             out = tracker.track(frame)
-            state = [int(s) for s in out['target_bbox']]
+            state = [int(s) for s in out["target_bbox"]]
             output_boxes.append(state)
 
             # cv.rectangle(frame_disp, (state[0], state[1]), (state[2] + state[0], state[3] + state[1]),
@@ -266,22 +321,21 @@ class Tracker:
             if not os.path.exists(self.results_dir):
                 os.makedirs(self.results_dir)
             video_name = Path(videofilepath).stem
-            base_results_path = os.path.join(self.results_dir, 'video_{}'.format(video_name))
+            base_results_path = os.path.join(self.results_dir, "video_{}".format(video_name))
 
             tracked_bb = np.array(output_boxes).astype(int)
-            bbox_file = '{}.txt'.format(base_results_path)
-            np.savetxt(bbox_file, tracked_bb, delimiter='\t', fmt='%d')
-
+            bbox_file = "{}.txt".format(base_results_path)
+            np.savetxt(bbox_file, tracked_bb, delimiter="\t", fmt="%d")
 
     def get_parameters(self, tracker_params=None):
         """Get parameters."""
-        param_module = importlib.import_module('lib.test.parameter.{}'.format(self.name))
+        param_module = importlib.import_module("lib.test.parameter.{}".format(self.name))
         search_area_scale = None
-        if tracker_params is not None and 'search_area_scale' in tracker_params:
-            search_area_scale = tracker_params['search_area_scale']
-        model = ''
-        if tracker_params is not None and 'model' in tracker_params:
-            model = tracker_params['model']
+        if tracker_params is not None and "search_area_scale" in tracker_params:
+            search_area_scale = tracker_params["search_area_scale"]
+        model = ""
+        if tracker_params is not None and "model" in tracker_params:
+            model = tracker_params["model"]
         params = param_module.parameters(self.parameter_name, model, search_area_scale)
         if tracker_params is not None:
             for param_k, v in tracker_params.items():
@@ -296,6 +350,3 @@ class Tracker:
             return decode_img(image_file[0], image_file[1])
         else:
             raise ValueError("type of image_file should be str or list")
-
-
-

@@ -25,6 +25,8 @@ class EnvSettings:
         self.got_reports_path = ''
         self.tn_packed_results_path = ''
 
+        self.rgbt234_path = ''
+        self.gtot_path = ''
 
 def create_default_local_file():
     comment = {'results_path': 'Where to store tracking results',
@@ -68,7 +70,7 @@ class EnvSettings_ITP:
         self.vot_path = os.path.join(data_dir, 'VOT2019')
         self.got10k_path = os.path.join(data_dir, 'got10k')
         self.got10k_lmdb_path = os.path.join(data_dir, 'got10k_lmdb')
-        self.lasot_path = os.path.join(data_dir, 'lasot')
+        self.lasot_path = os.path.join(data_dir, 'LaSOT')
         self.lasot_lmdb_path = os.path.join(data_dir, 'lasot_lmdb')
         self.trackingnet_path = os.path.join(data_dir, 'trackingNet')
         self.davis_dir = ''
@@ -78,6 +80,11 @@ class EnvSettings_ITP:
         self.got_reports_path = ''
         self.tn_packed_results_path = ''
 
+        self.rgbt234_path = os.path.join(data_dir, 'RGBT234')
+        self.gtot_path = os.path.join(data_dir, 'GTOT')
+        self.vtuav_path = os.path.join(data_dir, 'VTUAV')
+        self.lasher_path = os.path.join(data_dir, 'LasHeR')
+        self.depthtrack_path = os.path.join(data_dir, "DepthTrack")
 
 def create_default_local_file_ITP_test(workspace_dir, data_dir, save_dir):
     comment = {'results_path': 'Where to store tracking results',

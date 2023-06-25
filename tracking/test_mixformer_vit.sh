@@ -4,9 +4,79 @@
 # Finally, you can find the tracking results on RESULTS_PATH and the tracking plots on RESULTS_PLOT_PATH.
 
 ##########-------------- MixViT-B -----------------##########
-### LaSOT test and evaluation
-python tracking/test.py mixformer_vit_online baseline --dataset lasot --threads 32 --num_gpus 8 --params__model mixformer_vit_base_online.pth.tar --params__search_area_scale 5.05
-python tracking/analysis_results.py --dataset_name lasot --tracker_param baseline
+# 直接测试
+# OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="0, 1, 2, 3, 4, 5, 6, 7" \
+# python tracking/test.py mixformer_vit_online baseline_large --dataset LasHeR \
+#  --threads 24 --num_gpus 4 --params__model mixformer_vit_large_online.pth.tar \
+#  --type RGB
+ #--save_name_suffix RGB
+
+# 训练结果测试
+# OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="0, 1, 2, 3, 4, 5, 6, 7" \
+# python tracking/test.py mixformer_vit baseline_large_tir --dataset RGBT234 \
+#  --threads 24 --checkpoint_dir ./results_train \
+#  --type TIR  --save_name_suffix TIR_fintune
+
+# OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="0, 1, 2, 3, 4, 5, 6, 7" \
+# python tracking/test.py mixformer_vit_rgbt_unibackbone attention_lasher_newfusion_2layer_2 --dataset RGBT234 \
+#  --threads 24 --checkpoint_dir ./results_train \
+#  --type RGBT  --save_name_suffix jet_45
+
+# OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="0, 1, 2, 3" \
+# python tracking/test.py mixformer_vit_rgbt_unibackbone attention_lasher_newfusion_2layer --dataset LasHeR \
+#  --threads 12 --checkpoint_dir ./results_train \
+#  --type RGBT  --save_name_suffix jet_45
+
+# OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="4,5,6,7" \
+# python tracking/test.py asymmetric_shared attention_lasher_newfusion_2layer_RGBD --dataset DepthTrack \
+#  --threads 12 --checkpoint_dir ./results_train \
+#  --type RGBT  --save_name_suffix jet_45
+
+OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="4,5,6,7" \
+python tracking/test.py asymmetric_shared attention_lasher_newfusion_2layer_3 --dataset RGBT234 \
+ --threads 12 --checkpoint_dir ./results_train \
+ --type RGBT  --save_name_suffix jet_45
+
+OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="4,5,6,7" \
+python tracking/test.py asymmetric_shared attention_lasher_newfusion_2layer_3 --dataset LasHeR \
+ --threads 12 --checkpoint_dir ./results_train \
+ --type RGBT  --save_name_suffix jet_45
+
+# OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="0,1,2,3" \
+# python tracking/test.py asymmetric_shared_ce attention_lasher_newfusion_2layer --dataset RGBT234 \
+#  --threads 12 --checkpoint_dir ./results_train \
+#  --type RGBT  --save_name_suffix jet_45
+
+# OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="0,1,2,3" \
+# python tracking/test.py asymmetric_shared_ce attention_lasher_newfusion_2layer --dataset LasHeR \
+#  --threads 12 --checkpoint_dir ./results_train \
+#  --type RGBT  --save_name_suffix jet_45
+
+# OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="4,5,6,7" \
+# python tracking/test.py asymmetric_shared_online attention_lasher_newfusion_2layer --dataset RGBT234 \
+#  --threads 12 --checkpoint_dir ./results_train \
+#  --type RGBT  --save_name_suffix jet_45
+
+# OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="4,5,6,7" \
+# python tracking/test.py asymmetric_shared_online attention_lasher_newfusion_2layer --dataset LasHeR \
+#  --threads 12 --checkpoint_dir ./results_train \
+#  --type RGBT  --save_name_suffix jet_45
+
+# OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="4,5,6,7" \
+# python tracking/test.py asymmetric_shared_online attention_lasher_newfusion_2layer_RGBD_load --dataset DepthTrack \
+#  --threads 12 --checkpoint_dir ./results_train \
+#  --type RGBT  --save_name_suffix jet_45
+
+# OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="4,5,6,7" \
+# python tracking/test.py asymmetric_shared_online attention_lasher_newfusion_2layer_load --dataset LasHeR \
+#  --threads 12 --checkpoint_dir ./results_train \
+#  --type RGBT  --save_name_suffix jet_45
+
+
+# --params__search_area_scale 5.0
+
+
+# python tracking/analysis_results.py --dataset_name lasot --tracker_param baseline
 
 ### TrackingNet test and pack
 # python tracking/test.py mixformer_vit_online baseline --dataset trackingnet --threads 32 --num_gpus 8 --params__model mixformer_vit_base_online.pth.tar

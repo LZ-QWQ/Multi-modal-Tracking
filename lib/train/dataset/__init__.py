@@ -10,3 +10,13 @@ from .imagenetvid_lmdb import ImagenetVID_lmdb
 from .coco_seq_lmdb import MSCOCOSeq_lmdb
 from .tracking_net_lmdb import TrackingNet_lmdb
 from .tnl2k import TNL2k
+
+from .vtuav import VTUAV
+from .lasher import LasHeR
+from .rgbt234 import RGBT234
+from .kaist import KAIST
+from .llvip_seq import LLVIPseq
+from .m3fd_seq import M3FDseq
+from .depthtrack_seq import DepthTrack
+from .rgbt234_tir import RGBT234_T
+from .lasher_tir import LasHeR_T

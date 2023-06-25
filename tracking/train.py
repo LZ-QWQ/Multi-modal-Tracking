@@ -37,11 +37,18 @@ def main():
                     % (args.script, args.config, args.save_dir, args.use_lmdb, args.script_prv, args.config_prv,
                        args.distill, args.script_teacher, args.config_teacher, args.stage1_model)
     elif args.mode == "multiple":
-        train_cmd = "python -m torch.distributed.launch --master_port %d --nproc_per_node %d lib/train/run_training.py " \
+        # --standalone
+        train_cmd = "torchrun --nnode=1 --node_rank=0 --nproc_per_nod=%d lib/train/run_training_ddp.py " \
                     "--script %s --config %s --save_dir %s --use_lmdb %d --script_prv %s --config_prv %s  " \
                     "--distill %d --script_teacher %s --config_teacher %s --stage1_model %s" \
-                    % (args.master_port, args.nproc_per_node, args.script, args.config, args.save_dir, args.use_lmdb, args.script_prv,
+                    % (args.nproc_per_node, args.script, args.config, args.save_dir, args.use_lmdb, args.script_prv,
                        args.config_prv, args.distill, args.script_teacher, args.config_teacher, args.stage1_model)
+        
+        # train_cmd = "python -m torch.distributed.launch --master_port %d --nproc_per_node %d lib/train/run_training.py " \
+        #             "--script %s --config %s --save_dir %s --use_lmdb %d --script_prv %s --config_prv %s  " \
+        #             "--distill %d --script_teacher %s --config_teacher %s --stage1_model %s" \
+        #             % (args.master_port, args.nproc_per_node, args.script, args.config, args.save_dir, args.use_lmdb, args.script_prv,
+        #                args.config_prv, args.distill, args.script_teacher, args.config_teacher, args.stage1_model)
     else:
         raise ValueError("mode should be 'single' or 'multiple'.")
     print(train_cmd)

@@ -7,37 +7,40 @@ import pickle
 import json
 from lib.test.evaluation.environment import env_settings
 from lib.test.analysis.extract_results import extract_results
+import numpy as np
 
 
 def get_plot_draw_styles():
-    plot_draw_style = [{'color': (1.0, 0.0, 0.0), 'line_style': '-'},
-                       {'color': (0.0, 1.0, 0.0), 'line_style': '-'},
-                       {'color': (0.0, 0.0, 1.0), 'line_style': '-'},
-                       {'color': (0.0, 0.0, 0.0), 'line_style': '-'},
-                       {'color': (1.0, 0.0, 1.0), 'line_style': '-'},
-                       {'color': (0.0, 1.0, 1.0), 'line_style': '-'},
-                       {'color': (0.5, 0.5, 0.5), 'line_style': '-'},
-                       {'color': (136.0 / 255.0, 0.0, 21.0 / 255.0), 'line_style': '-'},
-                       {'color': (1.0, 127.0 / 255.0, 39.0 / 255.0), 'line_style': '-'},
-                       {'color': (0.0, 162.0 / 255.0, 232.0 / 255.0), 'line_style': '-'},
-                       {'color': (0.0, 0.5, 0.0), 'line_style': '-'},
-                       {'color': (1.0, 0.5, 0.2), 'line_style': '-'},
-                       {'color': (0.1, 0.4, 0.0), 'line_style': '-'},
-                       {'color': (0.6, 0.3, 0.9), 'line_style': '-'},
-                       {'color': (0.4, 0.7, 0.1), 'line_style': '-'},
-                       {'color': (0.2, 0.1, 0.7), 'line_style': '-'},
-                       {'color': (0.7, 0.6, 0.2), 'line_style': '-'}]
+    plot_draw_style = [
+        {"color": (1.0, 0.0, 0.0), "line_style": "-"},
+        {"color": (0.0, 1.0, 0.0), "line_style": "-"},
+        {"color": (0.0, 0.0, 1.0), "line_style": "-"},
+        {"color": (0.0, 0.0, 0.0), "line_style": "-"},
+        {"color": (1.0, 0.0, 1.0), "line_style": "-"},
+        {"color": (0.0, 1.0, 1.0), "line_style": "-"},
+        {"color": (0.5, 0.5, 0.5), "line_style": "-"},
+        {"color": (136.0 / 255.0, 0.0, 21.0 / 255.0), "line_style": "-"},
+        {"color": (1.0, 127.0 / 255.0, 39.0 / 255.0), "line_style": "-"},
+        {"color": (0.0, 162.0 / 255.0, 232.0 / 255.0), "line_style": "-"},
+        {"color": (0.0, 0.5, 0.0), "line_style": "-"},
+        {"color": (1.0, 0.5, 0.2), "line_style": "-"},
+        {"color": (0.1, 0.4, 0.0), "line_style": "-"},
+        {"color": (0.6, 0.3, 0.9), "line_style": "-"},
+        {"color": (0.4, 0.7, 0.1), "line_style": "-"},
+        {"color": (0.2, 0.1, 0.7), "line_style": "-"},
+        {"color": (0.7, 0.6, 0.2), "line_style": "-"},
+    ]
 
     return plot_draw_style
 
 
 def check_eval_data_is_valid(eval_data, trackers, dataset):
-    """ Checks if the pre-computed results are valid"""
+    """Checks if the pre-computed results are valid"""
     seq_names = [s.name for s in dataset]
-    seq_names_saved = eval_data['sequences']
+    seq_names_saved = eval_data["sequences"]
 
     tracker_names_f = [(t.name, t.parameter_name, t.run_id) for t in trackers]
-    tracker_names_f_saved = [(t['name'], t['param'], t['run_id']) for t in eval_data['trackers']]
+    tracker_names_f_saved = [(t["name"], t["param"], t["run_id"]) for t in eval_data["trackers"]]
 
     return seq_names == seq_names_saved and tracker_names_f == tracker_names_f_saved
 
@@ -49,12 +52,12 @@ def merge_multiple_runs(eval_data):
     ave_success_rate_plot_center_norm_merged = []
     avg_overlap_all_merged = []
 
-    ave_success_rate_plot_overlap = torch.tensor(eval_data['ave_success_rate_plot_overlap'])
-    ave_success_rate_plot_center = torch.tensor(eval_data['ave_success_rate_plot_center'])
-    ave_success_rate_plot_center_norm = torch.tensor(eval_data['ave_success_rate_plot_center_norm'])
-    avg_overlap_all = torch.tensor(eval_data['avg_overlap_all'])
+    ave_success_rate_plot_overlap = torch.tensor(eval_data["ave_success_rate_plot_overlap"])
+    ave_success_rate_plot_center = torch.tensor(eval_data["ave_success_rate_plot_center"])
+    ave_success_rate_plot_center_norm = torch.tensor(eval_data["ave_success_rate_plot_center_norm"])
+    avg_overlap_all = torch.tensor(eval_data["avg_overlap_all"])
 
-    trackers = eval_data['trackers']
+    trackers = eval_data["trackers"]
     merged = torch.zeros(len(trackers), dtype=torch.uint8)
     for i in range(len(trackers)):
         if merged[i]:
@@ -62,7 +65,7 @@ def merge_multiple_runs(eval_data):
         base_tracker = trackers[i]
         new_tracker_names.append(base_tracker)
 
-        match = [t['name'] == base_tracker['name'] and t['param'] == base_tracker['param'] for t in trackers]
+        match = [t["name"] == base_tracker["name"] and t["param"] == base_tracker["param"] for t in trackers]
         match = torch.tensor(match)
 
         ave_success_rate_plot_overlap_merged.append(ave_success_rate_plot_overlap[:, match, :].mean(1))
@@ -77,94 +80,119 @@ def merge_multiple_runs(eval_data):
     ave_success_rate_plot_center_norm_merged = torch.stack(ave_success_rate_plot_center_norm_merged, dim=1)
     avg_overlap_all_merged = torch.stack(avg_overlap_all_merged, dim=1)
 
-    eval_data['trackers'] = new_tracker_names
-    eval_data['ave_success_rate_plot_overlap'] = ave_success_rate_plot_overlap_merged.tolist()
-    eval_data['ave_success_rate_plot_center'] = ave_success_rate_plot_center_merged.tolist()
-    eval_data['ave_success_rate_plot_center_norm'] = ave_success_rate_plot_center_norm_merged.tolist()
-    eval_data['avg_overlap_all'] = avg_overlap_all_merged.tolist()
+    eval_data["trackers"] = new_tracker_names
+    eval_data["ave_success_rate_plot_overlap"] = ave_success_rate_plot_overlap_merged.tolist()
+    eval_data["ave_success_rate_plot_center"] = ave_success_rate_plot_center_merged.tolist()
+    eval_data["ave_success_rate_plot_center_norm"] = ave_success_rate_plot_center_norm_merged.tolist()
+    eval_data["avg_overlap_all"] = avg_overlap_all_merged.tolist()
 
     return eval_data
 
 
 def get_tracker_display_name(tracker):
-    if tracker['disp_name'] is None:
-        if tracker['run_id'] is None:
-            disp_name = '{}_{}'.format(tracker['name'], tracker['param'])
+    if tracker["disp_name"] is None:
+        if tracker["run_id"] is None:
+            disp_name = "{}_{}".format(tracker["name"], tracker["param"])
         else:
-            disp_name = '{}_{}_{:03d}'.format(tracker['name'], tracker['param'],
-                                              tracker['run_id'])
+            disp_name = "{}_{}_{:03d}".format(tracker["name"], tracker["param"], tracker["run_id"])
     else:
-        disp_name = tracker['disp_name']
+        disp_name = tracker["disp_name"]
 
-    return  disp_name
+    return disp_name
+
+
+# fix for bug of tikzplotlib https://github.com/nschloe/tikzplotlib/issues/557
+def tikzplotlib_fix_ncols(obj):
+    """
+    workaround for matplotlib 3.6 renamed legend's _ncol to _ncols, which breaks tikzplotlib
+    """
+    if hasattr(obj, "_ncols"):
+        obj._ncol = obj._ncols
+    for child in obj.get_children():
+        tikzplotlib_fix_ncols(child)
 
 
 def plot_draw_save(y, x, scores, trackers, plot_draw_styles, result_plot_path, plot_opts):
-    plt.rcParams['text.usetex']=True
+    plt.rcParams["text.usetex"] = True
     plt.rcParams["font.family"] = "Times New Roman"
+
     # Plot settings
-    font_size = plot_opts.get('font_size', 20)
-    font_size_axis = plot_opts.get('font_size_axis', 20)
-    line_width = plot_opts.get('line_width', 2)
-    font_size_legend = plot_opts.get('font_size_legend', 20)
+    font_size = plot_opts.get("font_size", 28)
+    font_size_axis = plot_opts.get("font_size_axis", 28)
+    line_width = plot_opts.get("line_width", 3.5)
+    font_size_legend = plot_opts.get("font_size_legend", 20.5) # 25 给少的，20.5给多的
 
-    plot_type = plot_opts['plot_type']
-    legend_loc = plot_opts['legend_loc']
+    plot_type = plot_opts["plot_type"]
+    legend_loc = plot_opts["legend_loc"]
 
-    xlabel = plot_opts['xlabel']
-    ylabel = plot_opts['ylabel']
-    ylabel = "%s"%(ylabel.replace('%','\%'))
-    xlim = plot_opts['xlim']
-    ylim = plot_opts['ylim']
+    xlabel = r"{\bf %s}" % plot_opts["xlabel"]
+    ylabel = r"{\bf %s}" % plot_opts["ylabel"]
+    ylabel = "%s" % (ylabel.replace("%", "\%"))
+    xlim = plot_opts["xlim"]
+    ylim = plot_opts["ylim"]
 
-    title = r"$\bf{%s}$" %(plot_opts['title'])
+    # title = r"$\bf{%s}$" %(plot_opts['title'])
+    title = r"{\bf %s}" % (plot_opts["title"])
 
-    matplotlib.rcParams.update({'font.size': font_size})
-    matplotlib.rcParams.update({'axes.titlesize': font_size_axis})
-    matplotlib.rcParams.update({'axes.titleweight': 'black'})
-    matplotlib.rcParams.update({'axes.labelsize': font_size_axis})
+    matplotlib.rcParams.update({"font.size": font_size})
 
-    fig, ax = plt.subplots()
+    matplotlib.rcParams.update({"axes.titlesize": font_size_axis})
+    matplotlib.rcParams.update({"axes.titleweight": "black"})
+    matplotlib.rcParams.update({"axes.labelsize": font_size_axis})
 
-    index_sort = scores.argsort(descending=False)
+    fig, ax = plt.subplots(figsize=(12, 9.2))
+
+    index_sort = scores.argsort(descending=False)[: len(plot_draw_styles)]  # 只打印前一些部分，不然总报错
 
     plotted_lines = []
     legend_text = []
 
     for id, id_sort in enumerate(index_sort):
-        line = ax.plot(x.tolist(), y[id_sort, :].tolist(),
-                       linewidth=line_width,
-                       color=plot_draw_styles[index_sort.numel() - id - 1]['color'],
-                       linestyle=plot_draw_styles[index_sort.numel() - id - 1]['line_style'])
+        line = ax.plot(
+            x.tolist(),
+            y[id_sort, :].tolist(),
+            linewidth=line_width,
+            color=plot_draw_styles[index_sort.numel() - id - 1]["color"],
+            linestyle=plot_draw_styles[index_sort.numel() - id - 1]["line_style"],
+        )
 
         plotted_lines.append(line[0])
 
         tracker = trackers[id_sort]
         disp_name = get_tracker_display_name(tracker)
 
-        legend_text.append('{} [{:.1f}]'.format(disp_name, scores[id_sort]))
+        legend_text.append("{} [{:.1f}]".format(disp_name, scores[id_sort]))
 
     try:
         # add bold to our method
-        for i in range(1,2):
-            legend_text[-i] = r'\textbf{%s}'%(legend_text[-i])
+        for i in range(1, 2):
+            legend_text[-i] = r"\textbf{%s}" % (legend_text[-i])
 
-        ax.legend(plotted_lines[::-1], legend_text[::-1], loc=legend_loc, fancybox=False, edgecolor='black',
-                  fontsize=font_size_legend, framealpha=1.0)
+        # box = ax.get_position()
+        legend = ax.legend(
+            plotted_lines[::-1],
+            legend_text[::-1],
+            loc=legend_loc,
+            fancybox=False,
+            edgecolor="black",
+            fontsize=font_size_legend,
+            framealpha=1.0,
+        )
+        # legend.set_bbox_to_anchor((1, box.y0))
     except:
         pass
 
-    ax.set(xlabel=xlabel,
-           ylabel=ylabel,
-           xlim=xlim, ylim=ylim,
-           title=title)
-
-    ax.grid(True, linestyle='-.')
+    ax.set(xlabel=xlabel, ylabel=ylabel, xlim=xlim, ylim=ylim, title=title)
+    ax.grid(True, linestyle="-.")
     fig.tight_layout()
 
-    tikzplotlib.save('{}/{}_plot.tex'.format(result_plot_path, plot_type))
-    fig.savefig('{}/{}_plot.pdf'.format(result_plot_path, plot_type), dpi=300, format='pdf', transparent=True)
-    plt.draw()
+    tikzplotlib_fix_ncols(fig)
+    tikzplotlib.save("{}/{}_plot.tex".format(result_plot_path, plot_type))
+    fig.savefig(
+        "{}/{}_plot.pdf".format(result_plot_path, plot_type), dpi=1200, format="pdf", transparent=True, bbox_inches="tight", pad_inches=0
+    )
+    # fig.savefig('{}/{}_plot.eps'.format(result_plot_path, plot_type), dpi=1200, format='eps', transparent=True)
+    plt.close()  # plt.draw()
 
 
 def check_and_load_precomputed_results(trackers, dataset, report_name, force_evaluation=False, **kwargs):
@@ -173,10 +201,10 @@ def check_and_load_precomputed_results(trackers, dataset, report_name, force_eva
 
     # Load pre-computed results
     result_plot_path = os.path.join(settings.result_plot_path, report_name)
-    eval_data_path = os.path.join(result_plot_path, 'eval_data.pkl')
+    eval_data_path = os.path.join(result_plot_path, "eval_data.pkl")
 
     if os.path.isfile(eval_data_path) and not force_evaluation:
-        with open(eval_data_path, 'rb') as fh:
+        with open(eval_data_path, "rb") as fh:
             eval_data = pickle.load(fh)
     else:
         # print('Pre-computed evaluation data not found. Computing results!')
@@ -188,10 +216,9 @@ def check_and_load_precomputed_results(trackers, dataset, report_name, force_eva
         # pass
     else:
         # Update display names
-        tracker_names = [{'name': t.name, 'param': t.parameter_name, 'run_id': t.run_id, 'disp_name': t.display_name}
-                         for t in trackers]
-        eval_data['trackers'] = tracker_names
-    with open(eval_data_path, 'wb') as fh:
+        tracker_names = [{"name": t.name, "param": t.parameter_name, "run_id": t.run_id, "disp_name": t.display_name} for t in trackers]
+        eval_data["trackers"] = tracker_names
+    with open(eval_data_path, "wb") as fh:
         pickle.dump(eval_data, fh)
     return eval_data
 
@@ -212,8 +239,7 @@ def get_prec_curve(ave_success_rate_plot_center, valid_sequence):
     return prec_curve, prec_score
 
 
-def plot_results(trackers, dataset, report_name, merge_results=False,
-                 plot_types=('success'), force_evaluation=False, **kwargs):
+def plot_results(trackers, dataset, report_name, merge_results=False, plot_types=("success"), force_evaluation=False, **kwargs):
     """
     Plot results for the given trackers
 
@@ -238,86 +264,103 @@ def plot_results(trackers, dataset, report_name, merge_results=False,
     if merge_results:
         eval_data = merge_multiple_runs(eval_data)
 
-    tracker_names = eval_data['trackers']
+    tracker_names = eval_data["trackers"]
 
-    valid_sequence = torch.tensor(eval_data['valid_sequence'], dtype=torch.bool)
+    valid_sequence = torch.tensor(eval_data["valid_sequence"], dtype=torch.bool)
 
-    print('\nPlotting results over {} / {} sequences'.format(valid_sequence.long().sum().item(), valid_sequence.shape[0]))
+    print("\nPlotting results over {} / {} sequences".format(valid_sequence.long().sum().item(), valid_sequence.shape[0]))
 
-    print('\nGenerating plots for: {}'.format(report_name))
+    print("\nGenerating plots for: {}".format(report_name))
 
     # ********************************  Success Plot **************************************
-    if 'success' in plot_types:
-        ave_success_rate_plot_overlap = torch.tensor(eval_data['ave_success_rate_plot_overlap'])
+    if "success" in plot_types:
+        ave_success_rate_plot_overlap = torch.tensor(eval_data["ave_success_rate_plot_overlap"])
 
         # Index out valid sequences
         auc_curve, auc = get_auc_curve(ave_success_rate_plot_overlap, valid_sequence)
-        threshold_set_overlap = torch.tensor(eval_data['threshold_set_overlap'])
+        threshold_set_overlap = torch.tensor(eval_data["threshold_set_overlap"])
 
-        success_plot_opts = {'plot_type': 'success', 'legend_loc': 'lower left', 'xlabel': 'Overlap threshold',
-                             'ylabel': 'Overlap Precision [%]', 'xlim': (0, 1.0), 'ylim': (0, 88), 'title': 'Success'}
+        success_plot_opts = {
+            "plot_type": "success",
+            "legend_loc": "lower left",
+            "xlabel": "Overlap threshold",
+            "ylabel": "Overlap Precision [%]",
+            "xlim": (0, 1.0),
+            "ylim": (0, 98),
+            "title": "Success plot",
+        }
         plot_draw_save(auc_curve, threshold_set_overlap, auc, tracker_names, plot_draw_styles, result_plot_path, success_plot_opts)
 
     # ********************************  Precision Plot **************************************
-    if 'prec' in plot_types:
-        ave_success_rate_plot_center = torch.tensor(eval_data['ave_success_rate_plot_center'])
+    if "prec" in plot_types:
+        ave_success_rate_plot_center = torch.tensor(eval_data["ave_success_rate_plot_center"])
 
         # Index out valid sequences
         prec_curve, prec_score = get_prec_curve(ave_success_rate_plot_center, valid_sequence)
-        threshold_set_center = torch.tensor(eval_data['threshold_set_center'])
+        threshold_set_center = torch.tensor(eval_data["threshold_set_center"])
 
-        precision_plot_opts = {'plot_type': 'precision', 'legend_loc': 'lower right',
-                               'xlabel': 'Location error threshold [pixels]', 'ylabel': 'Distance Precision [%]',
-                               'xlim': (0, 50), 'ylim': (0, 100), 'title': 'Precision plot'}
-        plot_draw_save(prec_curve, threshold_set_center, prec_score, tracker_names, plot_draw_styles, result_plot_path,
-                       precision_plot_opts)
+        precision_plot_opts = {
+            "plot_type": "precision",
+            "legend_loc": "lower right",
+            "xlabel": "Location error threshold [pixels]",
+            "ylabel": "Distance Precision [%]",
+            "xlim": (0, 50),
+            "ylim": (0, 100),
+            "title": "Precision plot",
+        }
+        plot_draw_save(prec_curve, threshold_set_center, prec_score, tracker_names, plot_draw_styles, result_plot_path, precision_plot_opts)
 
     # ********************************  Norm Precision Plot **************************************
-    if 'norm_prec' in plot_types:
-        ave_success_rate_plot_center_norm = torch.tensor(eval_data['ave_success_rate_plot_center_norm'])
+    if "norm_prec" in plot_types:
+        ave_success_rate_plot_center_norm = torch.tensor(eval_data["ave_success_rate_plot_center_norm"])
 
         # Index out valid sequences
         prec_curve, prec_score = get_prec_curve(ave_success_rate_plot_center_norm, valid_sequence)
-        threshold_set_center_norm = torch.tensor(eval_data['threshold_set_center_norm'])
+        threshold_set_center_norm = torch.tensor(eval_data["threshold_set_center_norm"])
 
-        norm_precision_plot_opts = {'plot_type': 'norm_precision', 'legend_loc': 'lower right',
-                                    'xlabel': 'Location error threshold', 'ylabel': 'Distance Precision [%]',
-                                    'xlim': (0, 0.5), 'ylim': (0, 85), 'title': 'Normalized Precision'}
-        plot_draw_save(prec_curve, threshold_set_center_norm, prec_score, tracker_names, plot_draw_styles, result_plot_path,
-                       norm_precision_plot_opts)
+        norm_precision_plot_opts = {
+            "plot_type": "norm_precision",
+            "legend_loc": "lower right",
+            "xlabel": "Location error threshold",
+            "ylabel": "Distance Precision [%]",
+            "xlim": (0, 0.5),
+            "ylim": (0, 85),
+            "title": "Normalized Precision",
+        }
+        plot_draw_save(
+            prec_curve, threshold_set_center_norm, prec_score, tracker_names, plot_draw_styles, result_plot_path, norm_precision_plot_opts
+        )
 
     plt.show()
 
 
-def generate_formatted_report(row_labels, scores, table_name=''):
+def generate_formatted_report(row_labels, scores, table_name=""):
     name_width = max([len(d) for d in row_labels] + [len(table_name)]) + 5
     min_score_width = 10
 
-    report_text = '\n{label: <{width}} |'.format(label=table_name, width=name_width)
+    report_text = "\n{label: <{width}} |".format(label=table_name, width=name_width)
 
     score_widths = [max(min_score_width, len(k) + 3) for k in scores.keys()]
 
     for s, s_w in zip(scores.keys(), score_widths):
-        report_text = '{prev} {s: <{width}} |'.format(prev=report_text, s=s, width=s_w)
+        report_text = "{prev} {s: <{width}} |".format(prev=report_text, s=s, width=s_w)
 
-    report_text = '{prev}\n'.format(prev=report_text)
+    report_text = "{prev}\n".format(prev=report_text)
 
     for trk_id, d_name in enumerate(row_labels):
         # display name
-        report_text = '{prev}{tracker: <{width}} |'.format(prev=report_text, tracker=d_name,
-                                                           width=name_width)
+        report_text = "{prev}{tracker: <{width}} |".format(prev=report_text, tracker=d_name, width=name_width)
         for (score_type, score_value), s_w in zip(scores.items(), score_widths):
-            report_text = '{prev} {score: <{width}} |'.format(prev=report_text,
-                                                              score='{:0.2f}'.format(score_value[trk_id].item()),
-                                                              width=s_w)
-        report_text = '{prev}\n'.format(prev=report_text)
+            report_text = "{prev} {score: <{width}} |".format(
+                prev=report_text, score="{:0.2f}".format(score_value[trk_id].item()), width=s_w
+            )
+        report_text = "{prev}\n".format(prev=report_text)
 
     return report_text
 
 
-def print_results(trackers, dataset, report_name, merge_results=False,
-                  plot_types=('success'), **kwargs):
-    """ Print the results for the given trackers in a formatted table
+def print_results(trackers, dataset, report_name, merge_results=False, plot_types=("success"), **kwargs):
+    """Print the results for the given trackers in a formatted table
     args:
         trackers - List of trackers to evaluate
         dataset - List of sequences to evaluate
@@ -333,48 +376,92 @@ def print_results(trackers, dataset, report_name, merge_results=False,
     if merge_results:
         eval_data = merge_multiple_runs(eval_data)
 
-    tracker_names = eval_data['trackers']
-    valid_sequence = torch.tensor(eval_data['valid_sequence'], dtype=torch.bool)
+    tracker_names = eval_data["trackers"]
+    valid_sequence = torch.tensor(eval_data["valid_sequence"], dtype=torch.bool)
 
-    print('\nReporting results over {} / {} sequences'.format(valid_sequence.long().sum().item(), valid_sequence.shape[0]))
+    print("\nReporting results over {} / {} sequences".format(valid_sequence.long().sum().item(), valid_sequence.shape[0]))
 
     scores = {}
 
     # ********************************  Success Plot **************************************
-    if 'success' in plot_types:
-        threshold_set_overlap = torch.tensor(eval_data['threshold_set_overlap'])
-        ave_success_rate_plot_overlap = torch.tensor(eval_data['ave_success_rate_plot_overlap'])
+    if "success" in plot_types:
+        threshold_set_overlap = torch.tensor(eval_data["threshold_set_overlap"])
+        ave_success_rate_plot_overlap = torch.tensor(eval_data["ave_success_rate_plot_overlap"])
 
         # Index out valid sequences
         auc_curve, auc = get_auc_curve(ave_success_rate_plot_overlap, valid_sequence)
-        scores['AUC'] = auc
-        scores['OP50'] = auc_curve[:, threshold_set_overlap == 0.50]
-        scores['OP75'] = auc_curve[:, threshold_set_overlap == 0.75]
+        scores["AUC"] = auc
+        scores["OP50"] = auc_curve[:, threshold_set_overlap == 0.50]
+        scores["OP75"] = auc_curve[:, threshold_set_overlap == 0.75]
 
     # ********************************  Precision Plot **************************************
-    if 'prec' in plot_types:
-        ave_success_rate_plot_center = torch.tensor(eval_data['ave_success_rate_plot_center'])
+    if "prec" in plot_types:
+        ave_success_rate_plot_center = torch.tensor(eval_data["ave_success_rate_plot_center"])
 
         # Index out valid sequences
         prec_curve, prec_score = get_prec_curve(ave_success_rate_plot_center, valid_sequence)
-        scores['Precision'] = prec_score
+        scores["Precision"] = prec_score
 
     # ********************************  Norm Precision Plot *********************************
-    if 'norm_prec' in plot_types:
-        ave_success_rate_plot_center_norm = torch.tensor(eval_data['ave_success_rate_plot_center_norm'])
+    if "norm_prec" in plot_types:
+        ave_success_rate_plot_center_norm = torch.tensor(eval_data["ave_success_rate_plot_center_norm"])
 
         # Index out valid sequences
         norm_prec_curve, norm_prec_score = get_prec_curve(ave_success_rate_plot_center_norm, valid_sequence)
-        scores['Norm Precision'] = norm_prec_score
+        scores["Norm Precision"] = norm_prec_score
 
     # Print
-    tracker_disp_names = [get_tracker_display_name(trk) for trk in tracker_names]
+
+    # 对score做排序
+    # tracker_disp_names = [get_tracker_display_name(trk) for trk in tracker_names]
+    tracker_disp_names = np.array([get_tracker_display_name(trk) for trk in tracker_names])
+    index_sorted = torch.argsort(scores["AUC"], descending=True)
+    for key, value in scores.items():
+        scores[key] = value[index_sorted]
+    tracker_disp_names = tracker_disp_names[index_sorted.numpy()]
     report_text = generate_formatted_report(tracker_disp_names, scores, table_name=report_name)
     print(report_text)
 
 
+def get_auc_pr(trackers, dataset, report_name, merge_results=False, **kwargs):
+    """Print the results for the given trackers in a formatted table
+    args:
+        trackers - List of trackers to evaluate
+        dataset - List of sequences to evaluate
+        report_name - Name of the folder in env_settings.perm_mat_path where the computed results and plots are saved
+        merge_results - If True, multiple random runs for a non-deterministic trackers are averaged
+    """
+    # Load pre-computed results
+    eval_data = check_and_load_precomputed_results(trackers, dataset, report_name, **kwargs)
+
+    # Merge results from multiple runs
+    if merge_results:
+        eval_data = merge_multiple_runs(eval_data)
+
+    tracker_names = eval_data["trackers"]
+    valid_sequence = torch.tensor(eval_data["valid_sequence"], dtype=torch.bool)
+
+    print("\nReporting results over {} / {} sequences".format(valid_sequence.long().sum().item(), valid_sequence.shape[0]))
+
+    threshold_set_overlap = torch.tensor(eval_data["threshold_set_overlap"])
+    ave_success_rate_plot_overlap = torch.tensor(eval_data["ave_success_rate_plot_overlap"])
+
+    # Index out valid sequences
+    _, auc = get_auc_curve(ave_success_rate_plot_overlap, valid_sequence)
+
+    ave_success_rate_plot_center = torch.tensor(eval_data["ave_success_rate_plot_center"])
+    # Index out valid sequences
+    _, prec_score = get_prec_curve(ave_success_rate_plot_center, valid_sequence)
+
+    # 对score做排序
+    # tracker_disp_names = [get_tracker_display_name(trk) for trk in tracker_names]
+    tracker_disp_names = np.array([get_tracker_display_name(trk) for trk in tracker_names])
+    tracker_auc_pr_dict = dict(zip(tracker_disp_names, zip(auc.tolist(), prec_score.tolist())))
+    return tracker_auc_pr_dict
+
+
 def plot_got_success(trackers, report_name):
-    """ Plot success plot for GOT-10k dataset using the json reports.
+    """Plot success plot for GOT-10k dataset using the json reports.
     Save the json reports from http://got-10k.aitestunion.com/leaderboard in the directory set to
     env_settings.got_reports_path
 
@@ -397,46 +484,50 @@ def plot_got_success(trackers, report_name):
     # Load results
     tracker_names = []
     for trk_id, trk in enumerate(trackers):
-        json_path = '{}/{}.json'.format(settings.got_reports_path, trk.name)
+        json_path = "{}/{}.json".format(settings.got_reports_path, trk.name)
 
         if os.path.isfile(json_path):
-            with open(json_path, 'r') as f:
+            with open(json_path, "r") as f:
                 eval_data = json.load(f)
         else:
-            raise Exception('Report not found {}'.format(json_path))
+            raise Exception("Report not found {}".format(json_path))
 
         if len(eval_data.keys()) > 1:
             raise Exception
 
         # First field is the tracker name. Index it out
         eval_data = eval_data[list(eval_data.keys())[0]]
-        if 'succ_curve' in eval_data.keys():
-            curve = eval_data['succ_curve']
-            ao = eval_data['ao']
-        elif 'overall' in eval_data.keys() and 'succ_curve' in eval_data['overall'].keys():
-            curve = eval_data['overall']['succ_curve']
-            ao = eval_data['overall']['ao']
+        if "succ_curve" in eval_data.keys():
+            curve = eval_data["succ_curve"]
+            ao = eval_data["ao"]
+        elif "overall" in eval_data.keys() and "succ_curve" in eval_data["overall"].keys():
+            curve = eval_data["overall"]["succ_curve"]
+            ao = eval_data["overall"]["ao"]
         else:
-            raise Exception('Invalid JSON file {}'.format(json_path))
+            raise Exception("Invalid JSON file {}".format(json_path))
 
         auc_curve[trk_id, :] = torch.tensor(curve) * 100.0
         scores[trk_id] = ao * 100.0
 
-        tracker_names.append({'name': trk.name, 'param': trk.parameter_name, 'run_id': trk.run_id,
-                              'disp_name': trk.display_name})
+        tracker_names.append({"name": trk.name, "param": trk.parameter_name, "run_id": trk.run_id, "disp_name": trk.display_name})
 
     threshold_set_overlap = torch.arange(0.0, 1.01, 0.01, dtype=torch.float64)
 
-    success_plot_opts = {'plot_type': 'success', 'legend_loc': 'lower left', 'xlabel': 'Overlap threshold',
-                         'ylabel': 'Overlap Precision [%]', 'xlim': (0, 1.0), 'ylim': (0, 100), 'title': 'Success plot'}
-    plot_draw_save(auc_curve, threshold_set_overlap, scores, tracker_names, plot_draw_styles, result_plot_path,
-                   success_plot_opts)
+    success_plot_opts = {
+        "plot_type": "success",
+        "legend_loc": "lower left",
+        "xlabel": "Overlap threshold",
+        "ylabel": "Overlap Precision [%]",
+        "xlim": (0, 1.0),
+        "ylim": (0, 100),
+        "title": "Success plot",
+    }
+    plot_draw_save(auc_curve, threshold_set_overlap, scores, tracker_names, plot_draw_styles, result_plot_path, success_plot_opts)
     plt.show()
 
 
-def print_per_sequence_results(trackers, dataset, report_name, merge_results=False,
-                               filter_criteria=None, **kwargs):
-    """ Print per-sequence results for the given trackers. Additionally, the sequences to list can be filtered using
+def print_per_sequence_results(trackers, dataset, report_name, merge_results=False, filter_criteria=None, **kwargs):
+    """Print per-sequence results for the given trackers. Additionally, the sequences to list can be filtered using
     the filter criteria.
 
     args:
@@ -464,28 +555,28 @@ def print_per_sequence_results(trackers, dataset, report_name, merge_results=Fal
     if merge_results:
         eval_data = merge_multiple_runs(eval_data)
 
-    tracker_names = eval_data['trackers']
-    valid_sequence = torch.tensor(eval_data['valid_sequence'], dtype=torch.bool)
-    sequence_names = eval_data['sequences']
-    avg_overlap_all = torch.tensor(eval_data['avg_overlap_all']) * 100.0
+    tracker_names = eval_data["trackers"]
+    valid_sequence = torch.tensor(eval_data["valid_sequence"], dtype=torch.bool)
+    sequence_names = eval_data["sequences"]
+    avg_overlap_all = torch.tensor(eval_data["avg_overlap_all"]) * 100.0
 
     # Filter sequences
     if filter_criteria is not None:
-        if filter_criteria['mode'] == 'ao_min':
+        if filter_criteria["mode"] == "ao_min":
             min_ao = avg_overlap_all.min(dim=1)[0]
-            valid_sequence = valid_sequence & (min_ao < filter_criteria['threshold'])
-        elif filter_criteria['mode'] == 'ao_max':
+            valid_sequence = valid_sequence & (min_ao < filter_criteria["threshold"])
+        elif filter_criteria["mode"] == "ao_max":
             max_ao = avg_overlap_all.max(dim=1)[0]
-            valid_sequence = valid_sequence & (max_ao < filter_criteria['threshold'])
-        elif filter_criteria['mode'] == 'delta_ao':
+            valid_sequence = valid_sequence & (max_ao < filter_criteria["threshold"])
+        elif filter_criteria["mode"] == "delta_ao":
             min_ao = avg_overlap_all.min(dim=1)[0]
             max_ao = avg_overlap_all.max(dim=1)[0]
-            valid_sequence = valid_sequence & ((max_ao - min_ao) > filter_criteria['threshold'])
+            valid_sequence = valid_sequence & ((max_ao - min_ao) > filter_criteria["threshold"])
         else:
             raise Exception
 
     avg_overlap_all = avg_overlap_all[valid_sequence, :]
-    sequence_names = [s + ' (ID={})'.format(i) for i, (s, v) in enumerate(zip(sequence_names, valid_sequence.tolist())) if v]
+    sequence_names = [s + " (ID={})".format(i) for i, (s, v) in enumerate(zip(sequence_names, valid_sequence.tolist())) if v]
 
     tracker_disp_names = [get_tracker_display_name(trk) for trk in tracker_names]
 

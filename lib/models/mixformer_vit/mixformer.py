@@ -300,6 +300,7 @@ class MixFormer(nn.Module):
         if search.dim() == 5:
             search = search.squeeze(0)
         template, online_template, search = self.backbone(template, online_template, search)
+
         # search shape: (b, 384, 20, 20)
         # Forward the corner head
         return self.forward_box_head(search)
@@ -309,6 +310,7 @@ class MixFormer(nn.Module):
         if search.dim() == 5:
             search = search.squeeze(0)
         template, search = self.backbone.forward_test(search)
+
         # search (b, 384, 20, 20)
         # Forward the corner head
         return self.forward_box_head(search)
@@ -344,5 +346,21 @@ def build_mixformer_vit(cfg, train=True) -> MixFormer:
         box_head,
         head_type=cfg.MODEL.HEAD_TYPE
     )
-
+    if cfg.MODEL.RGB_PRETRAINED_PATH != "" and train:
+        ckpt_path = cfg.MODEL.RGB_PRETRAINED_PATH
+        device = torch.cuda.current_device()
+        ckpt = torch.load(ckpt_path, map_location=lambda storage, loc: storage.cuda(device))["net"]
+        new_dict = {}
+        for k, v in ckpt.items():
+            if "pos_embed" not in k and "mask_token" not in k:  # use fixed pos embed
+                new_dict[k] = v
+        missing_keys, unexpected_keys = model.load_state_dict(new_dict, strict=False)
+        if is_main_process():
+            print("Load pretrained backbone checkpoint from:", ckpt_path)
+            print("missing keys:", missing_keys)
+            print("unexpected keys:", unexpected_keys)
+            print("Loading pretrained ViT done.")
+    else:
+        if train:
+            print("[INFO] not load pretrain model, only using MAE initilization")
     return model

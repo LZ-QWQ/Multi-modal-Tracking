@@ -39,6 +39,6 @@ class BaseActor:
         """
         self.net.train(mode)
 
-    def eval(self):
-        """ Set network to eval mode"""
-        self.train(False)
+    # def eval(self):
+    #     """ Set network to eval mode"""
+    #     self.train(False)

@@ -12,7 +12,7 @@ def parameters(yaml_name: str, model=None, search_area_scale=None):
     yaml_file = os.path.join(prj_dir, 'experiments/mixformer_vit_online/%s.yaml' % yaml_name)
     update_config_from_file(yaml_file)
     params.cfg = cfg
-    print("test config: ", cfg)
+    # print("test config: ", cfg)
 
     # template and search region
     params.template_factor = cfg.TEST.TEMPLATE_FACTOR
@@ -21,7 +21,7 @@ def parameters(yaml_name: str, model=None, search_area_scale=None):
         params.search_factor = search_area_scale
     else:
         params.search_factor = cfg.TEST.SEARCH_FACTOR
-    print("search_area_scale: {}".format(params.search_factor))
+    # print("search_area_scale: {}".format(params.search_factor))
     params.search_size = cfg.TEST.SEARCH_SIZE
 
     # Network checkpoint path
@@ -32,5 +32,5 @@ def parameters(yaml_name: str, model=None, search_area_scale=None):
 
     # whether to save boxes from all queries
     params.save_all_boxes = False
-
+    # print(cfg.DATA.MAX_SAMPLE_INTERVAL)
     return params

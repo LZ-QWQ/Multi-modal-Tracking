@@ -1,0 +1,27 @@
+# 这个文件用来指定跟踪参数
+# 理论上应当先加载traninig的文件再加载这个并且覆盖之前
+
+# 这个文件用来做特征可视化的比较，因此以label的bbox做crop（但是要加jitter
+DATA:
+  MAX_SAMPLE_INTERVAL: [200]
+TEST:
+  LOAD_FROME_TRAIN_RESULT: True
+  TEMPLATE_FACTOR: 2.0
+  TEMPLATE_SIZE: 128
+  SEARCH_FACTOR: 4.5
+  SEARCH_SIZE: 288
+
+  # for search
+  SEARCH_CENTER_JITTER: 4.0
+  SEARCH_SCALE_JITTER: 0.2
+
+  # for online template
+  TEMPLATE_CENTER_JITTER: 1.5
+  TEMPLATE_SCALE_JITTER: 0.15
+
+  UPDATE_INTERVALS:
+    LASOT: [200]
+    GOT10K_TEST: [200]
+    TRACKINGNET: [25]
+    VOT20: [10]
+    VOT20LT: [200]

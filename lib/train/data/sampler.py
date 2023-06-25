@@ -2,14 +2,14 @@ import random
 import torch.utils.data
 from lib.utils import TensorDict
 import numpy as np
-
+import traceback
 
 def no_processing(data):
     return data
 
 
 class TrackingSampler(torch.utils.data.Dataset):
-    """ Class responsible for sampling frames from training sequences to form batches. 
+    """Class responsible for sampling frames from training sequences to form batches.
 
     The sampling is done in the following ways. First a dataset is selected at random. Next, a sequence is selected
     from that dataset. A base frame is then sampled randomly from the sequence. Next, a set of 'train frames' and
@@ -20,9 +20,19 @@ class TrackingSampler(torch.utils.data.Dataset):
     The sampled frames are then passed through the input 'processing' function for the necessary processing-
     """
 
-    def __init__(self, datasets, p_datasets, samples_per_epoch, max_gap,
-                 num_search_frames, num_template_frames=1, processing=no_processing, frame_sample_mode='causal',
-                 train_cls=False, pos_prob=0.5):
+    def __init__(
+        self,
+        datasets,
+        p_datasets,
+        samples_per_epoch,
+        max_gap,
+        num_search_frames,
+        num_template_frames=1,
+        processing=no_processing,
+        frame_sample_mode="causal",
+        train_cls=False,
+        pos_prob=0.5,
+    ):
         """
         args:
             datasets - List of datasets to be used for training
@@ -57,9 +67,8 @@ class TrackingSampler(torch.utils.data.Dataset):
     def __len__(self):
         return self.samples_per_epoch
 
-    def _sample_visible_ids(self, visible, num_ids=1, min_id=None, max_id=None,
-                            allow_invisible=False, force_invisible=False):
-        """ Samples num_ids frames between min_id and max_id for which target is visible
+    def _sample_visible_ids(self, visible, num_ids=1, min_id=None, max_id=None, allow_invisible=False, force_invisible=False):
+        """Samples num_ids frames between min_id and max_id for which target is visible
 
         args:
             visible - 1d Tensor indicating whether target is visible for each frame
@@ -117,21 +126,28 @@ class TrackingSampler(torch.utils.data.Dataset):
                 search_frame_ids = None
                 gap_increase = 0
 
-                if self.frame_sample_mode == 'causal':
+                if self.frame_sample_mode == "causal":
                     # Sample test and train frames in a causal manner, i.e. search_frame_ids > template_frame_ids
                     while search_frame_ids is None:
-                        base_frame_id = self._sample_visible_ids(visible, num_ids=1, min_id=self.num_template_frames - 1,
-                                                                 max_id=len(visible) - self.num_search_frames)
-                        prev_frame_ids = self._sample_visible_ids(visible, num_ids=self.num_template_frames - 1,
-                                                                  min_id=base_frame_id[0] - self.max_gap - gap_increase,
-                                                                  max_id=base_frame_id[0])
+                        base_frame_id = self._sample_visible_ids(
+                            visible, num_ids=1, min_id=self.num_template_frames - 1, max_id=len(visible) - self.num_search_frames
+                        )
+                        prev_frame_ids = self._sample_visible_ids(
+                            visible,
+                            num_ids=self.num_template_frames - 1,
+                            min_id=base_frame_id[0] - self.max_gap - gap_increase,
+                            max_id=base_frame_id[0],
+                        )
                         if prev_frame_ids is None:
                             gap_increase += 5
                             continue
                         template_frame_ids = base_frame_id + prev_frame_ids
-                        search_frame_ids = self._sample_visible_ids(visible, min_id=template_frame_ids[0] + 1,
-                                                                  max_id=template_frame_ids[0] + self.max_gap + gap_increase,
-                                                                  num_ids=self.num_search_frames)
+                        search_frame_ids = self._sample_visible_ids(
+                            visible,
+                            min_id=template_frame_ids[0] + 1,
+                            max_id=template_frame_ids[0] + self.max_gap + gap_increase,
+                            num_ids=self.num_search_frames,
+                        )
                         # Increase gap until a frame is found
                         gap_increase += 5
 
@@ -150,25 +166,29 @@ class TrackingSampler(torch.utils.data.Dataset):
                 search_frames, search_anno, meta_obj_test = dataset.get_frames(seq_id, search_frame_ids, seq_info_dict)
 
                 H, W, _ = template_frames[0].shape
-                template_masks = template_anno['mask'] if 'mask' in template_anno else [torch.zeros((H, W))] * self.num_template_frames
-                search_masks = search_anno['mask'] if 'mask' in search_anno else [torch.zeros((H, W))] * self.num_search_frames
+                template_masks = template_anno["mask"] if "mask" in template_anno else [torch.zeros((H, W))] * self.num_template_frames
+                search_masks = search_anno["mask"] if "mask" in search_anno else [torch.zeros((H, W))] * self.num_search_frames
 
-                data = TensorDict({'template_images': template_frames,
-                                   'template_anno': template_anno['bbox'],
-                                   'template_masks': template_masks,
-                                   'search_images': search_frames,
-                                   'search_anno': search_anno['bbox'],
-                                   'search_masks': search_masks,
-                                   'dataset': dataset.get_name(),
-                                   'test_class': meta_obj_test.get('object_class_name')})
+                data = TensorDict(
+                    {
+                        "template_images": template_frames,
+                        "template_anno": template_anno["bbox"],
+                        "template_masks": template_masks,
+                        "search_images": search_frames,
+                        "search_anno": search_anno["bbox"],
+                        "search_masks": search_masks,
+                        "dataset": dataset.get_name(),
+                        "test_class": meta_obj_test.get("object_class_name"),
+                    }
+                )
                 # make data augmentation
                 data = self.processing(data)
 
                 # check whether data is valid
-                valid = data['valid']
-            except:
+                valid = data["valid"]
+            except Exception as e:
                 valid = False
-
+                traceback.print_exc()
         return data
 
     def getitem_cls(self):
@@ -206,58 +226,61 @@ class TrackingSampler(torch.utils.data.Dataset):
             try:
                 # "try" is used to handle trackingnet data failure
                 # get images and bounding boxes (for templates)
-                template_frames, template_anno, meta_obj_train = dataset.get_frames(seq_id, template_frame_ids,
-                                                                                    seq_info_dict)
+                template_frames, template_anno, meta_obj_train = dataset.get_frames(seq_id, template_frame_ids, seq_info_dict)
                 H, W, _ = template_frames[0].shape
-                template_masks = template_anno['mask'] if 'mask' in template_anno else [torch.zeros(
-                    (H, W))] * self.num_template_frames
+                template_masks = template_anno["mask"] if "mask" in template_anno else [torch.zeros((H, W))] * self.num_template_frames
                 # get images and bounding boxes (for searches)
                 # positive samples
                 if random.random() < self.pos_prob:
-                    label = torch.ones(1,)
+                    label = torch.ones(
+                        1,
+                    )
                     search_frames, search_anno, meta_obj_test = dataset.get_frames(seq_id, search_frame_ids, seq_info_dict)
-                    search_masks = search_anno['mask'] if 'mask' in search_anno else [torch.zeros(
-                        (H, W))] * self.num_search_frames
+                    search_masks = search_anno["mask"] if "mask" in search_anno else [torch.zeros((H, W))] * self.num_search_frames
                 # negative samples
                 else:
-                    label = torch.zeros(1,)
+                    label = torch.zeros(
+                        1,
+                    )
                     if is_video_dataset:
                         search_frame_ids = self._sample_visible_ids(visible, num_ids=1, force_invisible=True)
                         if search_frame_ids is None:
                             search_frames, search_anno, meta_obj_test = self.get_one_search()
                         else:
-                            search_frames, search_anno, meta_obj_test = dataset.get_frames(seq_id, search_frame_ids,
-                                                                                           seq_info_dict)
+                            search_frames, search_anno, meta_obj_test = dataset.get_frames(seq_id, search_frame_ids, seq_info_dict)
                             search_anno["bbox"] = [self.get_center_box(H, W)]
                     else:
                         search_frames, search_anno, meta_obj_test = self.get_one_search()
                     H, W, _ = search_frames[0].shape
-                    search_masks = search_anno['mask'] if 'mask' in search_anno else [torch.zeros(
-                        (H, W))] * self.num_search_frames
+                    search_masks = search_anno["mask"] if "mask" in search_anno else [torch.zeros((H, W))] * self.num_search_frames
 
-                data = TensorDict({'template_images': template_frames,
-                                   'template_anno': template_anno['bbox'],
-                                   'template_masks': template_masks,
-                                   'search_images': search_frames,
-                                   'search_anno': search_anno['bbox'],
-                                   'search_masks': search_masks,
-                                   'dataset': dataset.get_name(),
-                                   'test_class': meta_obj_test.get('object_class_name')})
+                data = TensorDict(
+                    {
+                        "template_images": template_frames,
+                        "template_anno": template_anno["bbox"],
+                        "template_masks": template_masks,
+                        "search_images": search_frames,
+                        "search_anno": search_anno["bbox"],
+                        "search_masks": search_masks,
+                        "dataset": dataset.get_name(),
+                        "test_class": meta_obj_test.get("object_class_name"),
+                    }
+                )
 
                 # make data augmentation
                 data = self.processing(data)
                 # add classification label
                 data["label"] = label
                 # check whether data is valid
-                valid = data['valid']
+                valid = data["valid"]
             except:
                 valid = False
 
         return data
 
-    def get_center_box(self, H, W, ratio=1/8):
-        cx, cy, w, h = W/2, H/2, W * ratio, H * ratio
-        return torch.tensor([int(cx-w/2), int(cy-h/2), int(w), int(h)])
+    def get_center_box(self, H, W, ratio=1 / 8):
+        cx, cy, w, h = W / 2, H / 2, W * ratio, H * ratio
+        return torch.tensor([int(cx - w / 2), int(cy - h / 2), int(w), int(h)])
 
     def sample_seq_from_dataset(self, dataset, is_video_dataset):
 
@@ -269,10 +292,11 @@ class TrackingSampler(torch.utils.data.Dataset):
 
             # Sample frames
             seq_info_dict = dataset.get_sequence_info(seq_id)
-            visible = seq_info_dict['visible']
+            visible = seq_info_dict["visible"]
 
-            enough_visible_frames = visible.type(torch.int64).sum().item() > 2 * (
-                    self.num_search_frames + self.num_template_frames) and len(visible) >= 20
+            enough_visible_frames = (
+                visible.type(torch.int64).sum().item() > 2 * (self.num_search_frames + self.num_template_frames) and len(visible) >= 20
+            )
 
             enough_visible_frames = enough_visible_frames or not is_video_dataset
         return seq_id, visible, seq_info_dict
@@ -312,8 +336,7 @@ class TrackingSampler(torch.utils.data.Dataset):
                 else:
                     min_id, max_id = search_frame_ids[0] - max_gap, search_frame_ids[0]
                 if self.frame_sample_mode == "trident_pro":
-                    f_id = self._sample_visible_ids(visible, num_ids=1, min_id=min_id, max_id=max_id,
-                                                    allow_invisible=True)
+                    f_id = self._sample_visible_ids(visible, num_ids=1, min_id=min_id, max_id=max_id, allow_invisible=True)
                 else:
                     f_id = self._sample_visible_ids(visible, num_ids=1, min_id=min_id, max_id=max_id)
                 if f_id is None:

@@ -2,7 +2,8 @@ import torch
 import torch.utils.data.dataloader
 import importlib
 import collections
-from torch._six import string_classes, int_classes
+from torch._six import string_classes #, int_classes
+int_classes = int
 from lib.utils import TensorDict, TensorList
 
 
@@ -170,8 +171,8 @@ class LTRLoader(torch.utils.data.dataloader.DataLoader):
     __initialized = False
 
     def __init__(self, name, dataset, training=True, batch_size=1, shuffle=False, sampler=None, batch_sampler=None,
-                 num_workers=0, epoch_interval=1, collate_fn=None, stack_dim=0, pin_memory=False, drop_last=False,
-                 timeout=0, worker_init_fn=None):
+                 num_workers=0, epoch_interval=1, collate_fn=None, stack_dim=1, pin_memory=False, drop_last=False,
+                 timeout=0, worker_init_fn=None, **kwargs):
         if collate_fn is None:
             if stack_dim == 0:
                 collate_fn = ltr_collate

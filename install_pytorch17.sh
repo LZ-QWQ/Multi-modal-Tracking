@@ -39,7 +39,7 @@ pip install pycocotools
 echo ""
 echo ""
 echo "****************** Installing jpeg4py python wrapper ******************"
-apt-get install libturbojpeg
+# apt-get install libturbojpeg
 pip install jpeg4py
 
 echo ""
@@ -98,6 +98,6 @@ pip install einops
 pip install thop
 
 echo "****************** Install ninja-build for Precise ROI pooling ******************"
-apt-get install ninja-build
+# apt-get install ninja-build
 
 echo "****************** Installation complete! ******************"

@@ -52,7 +52,7 @@ class LaSOTDataset(BaseDataset):
         frames_list = ['{}/{:08d}.jpg'.format(frames_path, frame_number) for frame_number in range(1, ground_truth_rect.shape[0] + 1)]
 
         target_class = class_name
-        return Sequence(sequence_name, frames_list, 'lasot', ground_truth_rect.reshape(-1, 4),
+        return Sequence(sequence_name, frames_list, 'LaSOT', ground_truth_rect.reshape(-1, 4),
                         object_class=target_class, target_visible=target_visible)
 
     def __len__(self):
