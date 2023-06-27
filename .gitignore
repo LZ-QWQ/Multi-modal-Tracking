@@ -13,6 +13,8 @@ Deformable-DETR
 ViPT
 
 build/
+MultiScaleDeformableAttention.egg-info/
+dist/
 
 /results_train
 /tensorboard

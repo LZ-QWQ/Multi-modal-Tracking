@@ -156,6 +156,7 @@ class RGBT_Tracker:
 
         for idx, image_vi in enumerate(video_loader):
             if idx == 0:
+                time.sleep(10) # 等一下让loader预加载。 PS: 好像不太显著，应该执行下推理预热的，但是感觉FPS其实还可以，不管了。
                 # Initialize
                 start_time = time.time()
                 out = self.tracker.initialize(image_vi, init_info)
@@ -167,7 +168,6 @@ class RGBT_Tracker:
                     init_default["all_boxes"] = out["all_boxes"]
                     init_default["all_scores"] = out["all_scores"]
                 _store_outputs(out, init_default)
-
             else:
                 start_time = time.time()
 

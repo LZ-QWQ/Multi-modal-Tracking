@@ -11,6 +11,11 @@
 #  --type RGB
  #--save_name_suffix RGB
 
+OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="0, 1, 2, 3, 4, 5, 6, 7" \
+python tracking/test.py asymmetric_shared_online attention_lasher_newfusion_2layer_load --dataset RGBT234 \
+ --threads 8 --num_gpus 8 --params__model RGBT.pth.tar \
+ --type RGBT
+
 # 训练结果测试
 # OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="0, 1, 2, 3, 4, 5, 6, 7" \
 # python tracking/test.py mixformer_vit baseline_large_tir --dataset RGBT234 \
@@ -32,15 +37,15 @@
 #  --threads 12 --checkpoint_dir ./results_train \
 #  --type RGBT  --save_name_suffix jet_45
 
-OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="4,5,6,7" \
-python tracking/test.py asymmetric_shared attention_lasher_newfusion_2layer_3 --dataset RGBT234 \
- --threads 12 --checkpoint_dir ./results_train \
- --type RGBT  --save_name_suffix jet_45
+# OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="4,5,6,7" \
+# python tracking/test.py asymmetric_shared attention_lasher_newfusion_2layer_3 --dataset RGBT234 \
+#  --threads 12 --checkpoint_dir ./results_train \
+#  --type RGBT  --save_name_suffix jet_45
 
-OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="4,5,6,7" \
-python tracking/test.py asymmetric_shared attention_lasher_newfusion_2layer_3 --dataset LasHeR \
- --threads 12 --checkpoint_dir ./results_train \
- --type RGBT  --save_name_suffix jet_45
+# OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="4,5,6,7" \
+# python tracking/test.py asymmetric_shared attention_lasher_newfusion_2layer_3 --dataset LasHeR \
+#  --threads 12 --checkpoint_dir ./results_train \
+#  --type RGBT  --save_name_suffix jet_45
 
 # OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="0,1,2,3" \
 # python tracking/test.py asymmetric_shared_ce attention_lasher_newfusion_2layer --dataset RGBT234 \
