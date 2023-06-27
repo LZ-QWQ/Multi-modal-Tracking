@@ -5,8 +5,8 @@
 *.pytest_cache
 *.csv
 local.py
-data*
-paper
+/data*
+/paper
 depthtrack_workspace
 DeT
 Deformable-DETR
@@ -14,10 +14,9 @@ ViPT
 
 build/
 
-results_train
-tensorboard
-test
-visualization
-logs
-models
-无监督相关
+/results_train
+/tensorboard
+/test
+/visualization
+/models
+/无监督相关

@@ -1,0 +1,3 @@
+from .mixformer import build_mixformer_vit_rgbt
+from .mixformer_shared import build_mixformer_vit_rgbt_shared
+# from .mixformer_online import build_mixformer_vit_online_score
