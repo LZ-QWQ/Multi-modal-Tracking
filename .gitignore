@@ -27,3 +27,6 @@ dist/
 /models
 /无监督相关
 /UAV_demo_video
+
+/cut_speed.py
+/get_list_txt.py
