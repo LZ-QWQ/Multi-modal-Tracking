@@ -7,18 +7,23 @@
 local.py
 /data*
 /paper
-depthtrack_workspace
-DeT
-Deformable-DETR
-ViPT
+
+/depthtrack_workspace
+/ViPT
 
 build/
 MultiScaleDeformableAttention.egg-info/
 dist/
 
+/test*
+/*.mp4
+/.vscode
+/*.log
+/*.txt
 /results_train
 /tensorboard
 /test
 /visualization
 /models
 /无监督相关
+/UAV_demo_video

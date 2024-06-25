@@ -234,9 +234,10 @@ def extract_results(
     ave_success_rate_plot_center_norm = torch.zeros(
         (len(dataset), len(trackers), threshold_set_center.numel()), dtype=torch.float32
     )
-
+    
     valid_sequence = torch.ones(len(dataset), dtype=torch.uint8)
-
+    print("in extract, len(trackers)", len(trackers))
+    print("in extract",ave_success_rate_plot_overlap.shape, valid_sequence.shape)
     for seq_id, seq in enumerate(tqdm(dataset)):
         # Load anno
         anno_bb = torch.tensor(np.array(seq.ground_truth_rect))

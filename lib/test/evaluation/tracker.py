@@ -9,7 +9,7 @@ from lib.utils.lmdb_utils import decode_img
 from pathlib import Path
 import numpy as np
 import cv2
-
+import subprocess
 
 # 修改过给双模态数据的单RGB模态用
 def trackerlist(
@@ -227,23 +227,35 @@ class Tracker:
         multiobj_mode = getattr(params, "multiobj_mode", getattr(self.tracker_class, "multiobj_mode", "default"))
 
         if multiobj_mode == "default":
-            tracker = self.create_tracker(params)
+            self.create_tracker(device_id = 0) 
 
         elif multiobj_mode == "parallel":
-            tracker = MultiObjectWrapper(self.tracker_class, params, self.visdom, fast_load=True)
+            raise NotImplementedError
+            # tracker = MultiObjectWrapper(self.tracker_class, params, self.visdom, fast_load=True)
         else:
             raise ValueError("Unknown multi object mode {}".format(multiobj_mode))
 
         assert os.path.isfile(videofilepath), "Invalid param {}".format(videofilepath)
         ", videofilepath must be a valid videofile"
 
+
+
         output_boxes = []
-        cap = cv.VideoCapture(videofilepath)
-        display_name = "Display: " + tracker.params.tracker_name
+        cap = cv2.VideoCapture(videofilepath)
+        display_name = "Display: " + self.params.tracker_name
         # cv.namedWindow(display_name, cv.WINDOW_NORMAL | cv.WINDOW_KEEPRATIO)
         # cv.resizeWindow(display_name, 960, 720)
         success, frame = cap.read()
         # cv.imshow(display_name, frame)
+
+        # for save output video
+        frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        video_name = Path(videofilepath).stem
+        temp_video = os.path.join(self.results_dir, "temp_{}.mp4".format(video_name))  # 为了ffmpeg转换前的临时文件
+        video_writer = cv2.VideoWriter(
+            temp_video, cv2.VideoWriter_fourcc(*"mp4v"), 30, (frame_width, frame_height)
+        )
 
         def _build_init_info(box):
             return {"init_bbox": box}
@@ -251,26 +263,36 @@ class Tracker:
         if success is not True:
             print("Read frame from {} failed.".format(videofilepath))
             exit(-1)
+
+        frame_disp = frame.copy()
         if optional_box is not None:
+            raise NotImplementedError
             assert isinstance(optional_box, (list, tuple))
             assert len(optional_box) == 4, "valid box's foramt is [x,y,w,h]"
-            tracker.initialize(frame, _build_init_info(optional_box))
+            self.tracker.initialize(frame, _build_init_info(optional_box))
             output_boxes.append(optional_box)
         else:
-            raise NotImplementedError("We haven't support cv_show now.")
+            # raise NotImplementedError("We haven't support cv_show now.")
             # while True:
-            #     # cv.waitKey()
-            #     frame_disp = frame.copy()
-            #
-            #     cv.putText(frame_disp, 'Select target ROI and press ENTER', (20, 30), cv.FONT_HERSHEY_COMPLEX_SMALL,
-            #                1.5, (0, 0, 0), 1)
-            #
-            #     x, y, w, h = cv.selectROI(display_name, frame_disp, fromCenter=False)
-            #     init_state = [x, y, w, h]
-            #     tracker.initialize(frame, _build_init_info(init_state))
-            #     output_boxes.append(init_state)
-            #     break
+                # cv.waitKey()
+            
+            # cv2.putText(frame_disp, 'Select target ROI and press ENTER', (20, 30), cv2.FONT_HERSHEY_COMPLEX_SMALL,
+            #             1.5, (0, 0, 0), 1)
+        
+            x, y, w, h = cv2.selectROI(display_name, frame_disp, fromCenter=False)
+            init_state = [x, y, w, h]
+            self.tracker.initialize(frame, _build_init_info(init_state))
+            output_boxes.append(init_state)
+            
+            print("select done")
 
+        cv2.rectangle(frame_disp, (init_state[0], init_state[1]), (init_state[2] + init_state[0], init_state[3] + init_state[1]),
+                (0, 255, 0), 2)
+        video_writer.write(frame_disp)
+
+        idx = 1
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            
         while True:
             ret, frame = cap.read()
 
@@ -280,33 +302,36 @@ class Tracker:
             frame_disp = frame.copy()
 
             # Draw box
-            out = tracker.track(frame)
+            out = self.tracker.track(frame)
             state = [int(s) for s in out["target_bbox"]]
             output_boxes.append(state)
+            print(f"{idx}/{total_frames} frame done")
+            idx += 1
 
-            # cv.rectangle(frame_disp, (state[0], state[1]), (state[2] + state[0], state[3] + state[1]),
-            #              (0, 255, 0), 5)
-            #
-            # font_color = (0, 0, 0)
-            # cv.putText(frame_disp, 'Tracking!', (20, 30), cv.FONT_HERSHEY_COMPLEX_SMALL, 1,
-            #            font_color, 1)
-            # cv.putText(frame_disp, 'Press r to reset', (20, 55), cv.FONT_HERSHEY_COMPLEX_SMALL, 1,
-            #            font_color, 1)
-            # cv.putText(frame_disp, 'Press q to quit', (20, 80), cv.FONT_HERSHEY_COMPLEX_SMALL, 1,
-            #            font_color, 1)
+            cv2.rectangle(frame_disp, (state[0], state[1]), (state[2] + state[0], state[3] + state[1]),
+                         (255, 0, 0), 5)
+            video_writer.write(frame_disp)
 
-            # Display the resulting frame
-            # cv.imshow(display_name, frame_disp)
-            # key = cv.waitKey(1)
+            # # font_color = (0, 0, 0)
+            # # cv2.putText(frame_disp, 'Tracking!', (20, 30), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1,
+            # #            font_color, 1)
+            # # cv2.putText(frame_disp, 'Press r to reset', (20, 55), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1,
+            # #            font_color, 1)
+            # # cv2.putText(frame_disp, 'Press q to quit', (20, 80), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1,
+            # #            font_color, 1)
+
+            # # Display the resulting frame
+            # cv2.imshow(display_name, frame_disp)
+            # key = cv2.waitKey(1)
             # if key == ord('q'):
             #     break
             # elif key == ord('r'):
             #     ret, frame = cap.read()
             #     frame_disp = frame.copy()
-            #
+            
             #     cv.putText(frame_disp, 'Select target ROI and press ENTER', (20, 30), cv.FONT_HERSHEY_COMPLEX_SMALL, 1.5,
             #                (0, 0, 0), 1)
-            #
+            
             #     # cv.imshow(display_name, frame_disp)
             #     x, y, w, h = cv.selectROI(display_name, frame_disp, fromCenter=False)
             #     init_state = [x, y, w, h]
@@ -315,7 +340,24 @@ class Tracker:
 
         # When everything done, release the capture
         cap.release()
-        cv.destroyAllWindows()
+        cv2.destroyAllWindows()
+        video_writer.release()
+        subprocess.run(
+            args=[
+                "/usr/bin/ffmpeg",
+                "-nostdin",  # https://github.com/kkroening/ffmpeg-python/issues/108 解决回显关闭问题
+                "-y",
+                "-loglevel",
+                "quiet",
+                "-i",
+                temp_video,
+                "-vcodec",
+                "h264",
+                os.path.join(self.results_dir, "{}.mp4".format(video_name)),
+            ],
+            check=True,
+        )
+        os.remove(temp_video)
 
         if save_results:
             if not os.path.exists(self.results_dir):

@@ -91,7 +91,7 @@ class MixFormerOnline(BaseTracker):
         x_patch_arr, resize_factor, x_amask_arr = sample_target(image, self.state, self.params.search_factor,
                                                                 output_sz=self.params.search_size)  # (x1, y1, w, h)
         search = self.preprocessor.process(x_patch_arr)
-        with torch.no_grad():
+        with torch.inference_mode():
             if self.online_size==1:
                 out_dict, _ = self.network(self.template, self.online_template, search, run_score_head=True)
             else:
@@ -122,7 +122,7 @@ class MixFormerOnline(BaseTracker):
                 self.online_forget_id = (self.online_forget_id + 1) % self.online_size
 
             if self.online_size > 1:
-                with torch.no_grad():
+                with torch.inference_mode():
                     self.network.set_online(self.template, self.online_template)
 
             self.max_pred_score = -1

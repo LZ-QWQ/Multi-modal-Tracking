@@ -366,9 +366,12 @@ class MixFormer_RGBT_OnlineScore(nn.Module):
         # Forward the corner head
         # simply using RGB template, due to the implictly fusion in backbone
         if return_features:
-            return *self.forward_head(search, torch.split(template, [N, N], dim=0)[0], run_score_head), search_v, search_i, search
+            # 2024.03.31 修改
+            # return *self.forward_head(search, torch.split(template, [N, N], dim=0)[0], run_score_head), search_v, search_i, search
+            return *self.forward_head(search, torch.cat(torch.split(template, [N, N], dim=0), dim=2), run_score_head), search_v, search_i, search
         else:
-            return self.forward_head(search, torch.split(template, [N, N], dim=0)[0], run_score_head)
+            # return self.forward_head(search, torch.split(template, [N, N], dim=0)[0], run_score_head)
+            return self.forward_head(search, torch.cat(torch.split(template, [N, N], dim=0), dim=2), run_score_head)
 
     def forward_test(self, search, run_score_head=True, gt_bboxes=None):
         # search: (b, c, h, w)

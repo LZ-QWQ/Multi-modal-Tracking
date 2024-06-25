@@ -10,7 +10,7 @@ from lib.train.data import opencv_loader, LTRLoader  # , sampler, processing
 from lib.utils.misc import is_main_process
 
 # for rgbt
-from lib.train.dataset import VTUAV, LasHeR, RGBT234, KAIST, LLVIPseq, M3FDseq, DepthTrack, RGBT234_T, LasHeR_T
+from lib.train.dataset import VTUAV, LasHeR, RGBT234, KAIST, LLVIPseq, M3FDseq, DepthTrack, RGBT234_T, LasHeR_T, VTUAV_Test
 from lib.train.data import sampler_rgbt
 from lib.train.data import processing_rgbt
 from lib.train.data import transforms_rgbt
@@ -53,6 +53,7 @@ def names2datasets(name_list: list, settings, image_loader):
             "DepthTrack-Test",
             "LasHeR_T",  # for single TIR exp
             "RGBT234_T",
+            "VTUAV-Test"
         ]
         if name == "LASOT":
             if settings.use_lmdb:
@@ -151,6 +152,11 @@ def names2datasets(name_list: list, settings, image_loader):
                 raise ValueError("LasHeR_T not support lmdb")
             else:
                 datasets.append(LasHeR_T(settings.env.lasher_dir, image_loader=image_loader))
+        if name == "VTUAV-Test":
+            if settings.use_lmdb:
+                raise ValueError("VTUAV-Test not support lmdb")
+            else:
+                datasets.append(VTUAV_Test(settings.env.vtuav_dir, image_loader=image_loader))
     return datasets
 
 

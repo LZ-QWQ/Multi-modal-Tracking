@@ -4,19 +4,35 @@
 # Finally, you can find the tracking results on RESULTS_PATH and the tracking plots on RESULTS_PLOT_PATH.
 
 ##########-------------- MixViT-B -----------------##########
+# 记得改 tracking.yaml 里面的 LOAD_FROME_TRAIN_RESULT 谁写的这个代码QAQ !!!
+
 # 直接测试
 # OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="0, 1, 2, 3, 4, 5, 6, 7" \
-# python tracking/test.py mixformer_vit_online baseline_large --dataset LasHeR \
-#  --threads 24 --num_gpus 4 --params__model mixformer_vit_large_online.pth.tar \
+# python tracking/test.py mixformer_vit_online baseline --dataset VTUAV \
+#  --threads 24 --num_gpus 4 --params__model mixformer_vit_base_online.pth.tar \
 #  --type RGB
- #--save_name_suffix RGB
+#  --save_name_suffix RGB
 
-OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="0, 1, 2, 3, 4, 5, 6, 7" \
-python tracking/test.py asymmetric_shared_online attention_lasher_newfusion_2layer_load --dataset RGBT234 \
- --threads 8 --num_gpus 8 --params__model RGBT.pth.tar \
- --type RGBT
+OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" \
+python tracking/test.py asymmetric_shared attention_lasher_newfusion_2layer_vtuav_normal --dataset VTUAV \
+ --threads 16 --num_gpus 4 --params__model VTUAV_SOTA.tar \
+ --type RGBT --save_name_suffix jet_45_VTUAV_SOTA_no_update
+
+# OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="4,5" \
+# python tracking/test.py asymmetric_shared attention_lasher_newfusion_2layer --dataset LasHeR \
+#  --threads 6 --params__model MixFormer_RGBT_ep0095.pth.tar \
+#  --type RGBT --save_name_suffix jet_45_lasher_SOTA_no_update
+
+# ===========================================================================================
 
 # 训练结果测试
+
+# LZ for test
+# OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="0,1,2,3" \
+# python tracking/test.py asymmetric_shared attention_lasher_newfusion_2layer_vtuav_normal --dataset VTUAV \
+#  --threads 12 --checkpoint_dir ./results_train \
+#  --type RGBT  --save_name_suffix jet_45
+
 # OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="0, 1, 2, 3, 4, 5, 6, 7" \
 # python tracking/test.py mixformer_vit baseline_large_tir --dataset RGBT234 \
 #  --threads 24 --checkpoint_dir ./results_train \
@@ -47,6 +63,8 @@ python tracking/test.py asymmetric_shared_online attention_lasher_newfusion_2lay
 #  --threads 12 --checkpoint_dir ./results_train \
 #  --type RGBT  --save_name_suffix jet_45
 
+
+
 # OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="0,1,2,3" \
 # python tracking/test.py asymmetric_shared_ce attention_lasher_newfusion_2layer --dataset RGBT234 \
 #  --threads 12 --checkpoint_dir ./results_train \
@@ -57,8 +75,8 @@ python tracking/test.py asymmetric_shared_online attention_lasher_newfusion_2lay
 #  --threads 12 --checkpoint_dir ./results_train \
 #  --type RGBT  --save_name_suffix jet_45
 
-# OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="4,5,6,7" \
-# python tracking/test.py asymmetric_shared_online attention_lasher_newfusion_2layer --dataset RGBT234 \
+# OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="0,1,2,3" \
+# python tracking/test.py asymmetric_shared_online attention_lasher_newfusion_2layer_vtuav_normal_load --dataset VTUAV \
 #  --threads 12 --checkpoint_dir ./results_train \
 #  --type RGBT  --save_name_suffix jet_45
 

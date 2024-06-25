@@ -5,11 +5,15 @@
 
 ### Training MixFormer-ViT-B
 # Stage1: train mixformer without SPM
-# OMP_NUM_THREADS=8 CUDA_VISIBLE_DEVICES="4,5,6,7" \
+
+# OMP_NUM_THREADS=8 CUDA_VISIBLE_DEVICES="0,5,6,7" \
 # python ./tracking/train.py --script asymmetric_shared \
-#  --config attention_lasher_newfusion_2layer_RGBD --save_dir ./results_train --mode multiple --nproc_per_node 4
+#  --config attention_lasher_newfusion_2layer_vtuav --save_dir ./results_train --mode multiple --nproc_per_node 4
 
-
+# LZ for VTUAV normal
+# OMP_NUM_THREADS=2 CUDA_VISIBLE_DEVICES="0,1,2,3" \
+# python ./tracking/train.py --script asymmetric_shared \
+#  --config attention_lasher_newfusion_2layer_vtuav_normal --save_dir ./results_train --mode multiple --nproc_per_node 4
 
 # two-stream
 # OMP_NUM_THREADS=8 CUDA_VISIBLE_DEVICES="4,5,6,7" \
@@ -26,14 +30,14 @@
 #  --config attention_lasher_newfusion_2layer_3 --save_dir ./results_train --mode multiple --nproc_per_node 4
 
 # Stage2: train mixformer_online, i.e., SPM (score prediction module)
-# OMP_NUM_THREADS=8 CUDA_VISIBLE_DEVICES="4,5,6,7" \
-# python ./tracking/train.py --script asymmetric_shared_online \
-#  --config attention_lasher_newfusion_2layer_RGBD_load --save_dir ./results_train --mode multiple --nproc_per_node 4
+OMP_NUM_THREADS=2 CUDA_VISIBLE_DEVICES="0,1,2,3" \
+python ./tracking/train.py --script asymmetric_shared_online \
+ --config attention_lasher_newfusion_2layer_vtuav_normal_load --save_dir ./results_train --mode multiple --nproc_per_node 4
 
 ### Training MixFormer-L
-OMP_NUM_THREADS=8 CUDA_VISIBLE_DEVICES="0,1,2,3" \
-python ./tracking/train.py --script mixformer_vit \
- --config baseline_large_tir --save_dir ./results_train --mode multiple --nproc_per_node 4
+# OMP_NUM_THREADS=8 CUDA_VISIBLE_DEVICES="0,1,2,3" \
+# python ./tracking/train.py --script mixformer_vit \
+#  --config baseline_large_tir --save_dir ./results_train --mode multiple --nproc_per_node 4
 
 #python tracking/train.py --script mixformer_vit --config baseline_large --save_dir /YOUR/PATH/TO/SAVE/MIXFORMERL --mode multiple --nproc_per_node 8
 #python tracking/train.py --script mixformer_vit_online --config baseline_large --save_dir /YOUR/PATH/TO/SAVE/MIXFORMERL_ONLINE --mode multiple --nproc_per_node 8 --stage1_model /STAGE1/MODEL

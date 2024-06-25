@@ -21,10 +21,12 @@ dataset_dict = dict(
     # RGBT
     rgbt234=DatasetInfo(module=pt % "rgbt234", class_name="RGBT234Dataset", kwargs=dict()),
     gtot=DatasetInfo(module=pt % "gtot", class_name="GTOTDataset", kwargs=dict()),
-    vtuav=DatasetInfo(module=pt % "vtuav", class_name="VTUAVDataset", kwargs=dict()),
+    vtuav=DatasetInfo(module=pt % "vtuav", class_name="VTUAVDataset", kwargs=dict(split="all")),
     lasher=DatasetInfo(module=pt % "lasher", class_name="LasHeRDataset", kwargs=dict()),
     depthtrack=DatasetInfo(module=pt % "depthtrack", class_name="DepthTrackDataset", kwargs=dict()),
     vtuav_train=DatasetInfo(module=pt % "vtuavtrain", class_name="VTUAVTrainDataset", kwargs=dict()),
+    vtuav_short=DatasetInfo(module=pt % "vtuav", class_name="VTUAVDataset", kwargs=dict(split="short")),
+    vtuav_long=DatasetInfo(module=pt % "vtuav", class_name="VTUAVDataset", kwargs=dict(split="long")),
 )
 
 

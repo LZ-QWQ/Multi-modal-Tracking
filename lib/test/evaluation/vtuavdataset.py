@@ -8,10 +8,17 @@ import os
 class VTUAVDataset(BaseDataset):
     """ """
 
-    def __init__(self):
+    def __init__(self, split):
         super().__init__()
+        assert split in ["short", "long", "all"]
+        folder_str = "*"
+        if split == "short":
+            folder_str = "test_ST_*"
+        elif split == "long":
+            folder_str = "test_LT_*"
+
         self.base_path = self.env_settings.vtuav_path
-        split_list = sorted(glob.glob(os.path.join(self.base_path, "test_data", "*")))
+        split_list = sorted(glob.glob(os.path.join(self.base_path, "test_data", folder_str)))
         self.sequence_path_list = []
         for path in split_list:
             self.sequence_path_list += sorted(glob.glob(os.path.join(path, "*")))

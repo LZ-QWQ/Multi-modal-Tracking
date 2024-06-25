@@ -23,6 +23,14 @@
 #  --optional_box 735.0 160.0 49.0 100.0 --params__model mixformer_online_22k.pth.tar --debug 1 \
 #  --params__search_area_scale 4 --params__update_interval 5 --params__online_sizes 5
 
-python tracking/video_demo.py mixformer_online baseline /data0/cyt/experiments/mixformer/results_vis/diver.avi  \
-  --optional_box 528 294 225 407 --params__model mixformer_online_22k.pth.tar --debug 1 \
+OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES="7" \
+python tracking/video_demo.py mixformer_vit_online baseline_large /media/data4/lizheng/MixFormer/UAV_demo_video/DJI_20230910153818_0003_S.MP4  \
+  --params__model mixformer_vit_large_online.pth.tar --debug 1 \
   --params__search_area_scale 4.5 --params__update_interval 10 --params__online_sizes 5
+
+# --optional_box 528 294 225 407
+
+# DJI_20230910153025_0002_Z.MP4
+# DJI_20230910153818_0003_Z.MP4
+
+# DJI_20230910153050_0002_S.MP4

@@ -95,7 +95,7 @@ class VTUAV(BaseVideoDataset):
             out_of_view = torch.ByteTensor(attr_dict["OV"][:, 0])
             target_visible = ~occlusion & ~out_of_view
         else:
-            target_visible = torch.zeros(10 * bbox_length, dtype=torch.bool)  # convenience for sparse index
+            target_visible = torch.ones(10 * bbox_length, dtype=torch.bool)  # convenience for sparse index
         return target_visible
 
     def get_sequence_info(self, seq_id):

@@ -283,6 +283,7 @@ class TrackingSampler(torch.utils.data.Dataset):
                 # check whether data is valid
                 valid = data["valid"]
                 if not valid:
+                    # print("喵喵喵")
                     continue
 
                 # vis for debug, valid False 时可能会没执行完所有过程导致numpy()报错

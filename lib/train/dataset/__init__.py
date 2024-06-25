@@ -20,3 +20,4 @@ from .m3fd_seq import M3FDseq
 from .depthtrack_seq import DepthTrack
 from .rgbt234_tir import RGBT234_T
 from .lasher_tir import LasHeR_T
+from .vtuav_test import VTUAV_Test

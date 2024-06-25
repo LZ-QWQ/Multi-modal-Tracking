@@ -1,3 +1,0 @@
-null,nan,NaN,NULL
-23,43,52,64
-NULL,nan,NaN,null

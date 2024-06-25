@@ -46,5 +46,7 @@ for suffix_ in rgbt_suffix:
 
 dataset = get_dataset(dataset_name)
 
+# plot_results(trackers, dataset, args.report_name, merge_results=False, plot_types=("success", "prec", "norm_prec"))
+from lib.test.analysis.plot_results_cn import plot_results
 plot_results(trackers, dataset, args.report_name, merge_results=False, plot_types=("success", "prec", "norm_prec"))
 # print_results(trackers, dataset, 'UNO', merge_results=True, plot_types=('success', 'prec'))

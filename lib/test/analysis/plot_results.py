@@ -120,7 +120,7 @@ def plot_draw_save(y, x, scores, trackers, plot_draw_styles, result_plot_path, p
     font_size = plot_opts.get("font_size", 28)
     font_size_axis = plot_opts.get("font_size_axis", 28)
     line_width = plot_opts.get("line_width", 3.5)
-    font_size_legend = plot_opts.get("font_size_legend", 20.5) # 25 给少的，20.5给多的
+    font_size_legend = plot_opts.get("font_size_legend", 25) # 25 给少的，20.5给多的
 
     plot_type = plot_opts["plot_type"]
     legend_loc = plot_opts["legend_loc"]
@@ -161,7 +161,7 @@ def plot_draw_save(y, x, scores, trackers, plot_draw_styles, result_plot_path, p
         tracker = trackers[id_sort]
         disp_name = get_tracker_display_name(tracker)
 
-        legend_text.append("{} [{:.1f}]".format(disp_name, scores[id_sort]))
+        legend_text.append("[{:.1f}] {}".format(scores[id_sort], disp_name))
 
     try:
         # add bold to our method
@@ -207,11 +207,11 @@ def check_and_load_precomputed_results(trackers, dataset, report_name, force_eva
         with open(eval_data_path, "rb") as fh:
             eval_data = pickle.load(fh)
     else:
-        # print('Pre-computed evaluation data not found. Computing results!')
+        print('Pre-computed evaluation data not found. Computing results!')
         eval_data = extract_results(trackers, dataset, report_name, **kwargs)
 
     if not check_eval_data_is_valid(eval_data, trackers, dataset):
-        # print('Pre-computed evaluation data invalid. Re-computing results!')
+        print('Pre-computed evaluation data invalid. Re-computing results!')
         eval_data = extract_results(trackers, dataset, report_name, **kwargs)
         # pass
     else:
@@ -220,6 +220,7 @@ def check_and_load_precomputed_results(trackers, dataset, report_name, force_eva
         eval_data["trackers"] = tracker_names
     with open(eval_data_path, "wb") as fh:
         pickle.dump(eval_data, fh)
+    print(len(eval_data["ave_success_rate_plot_overlap"]))
     return eval_data
 
 
@@ -371,7 +372,7 @@ def print_results(trackers, dataset, report_name, merge_results=False, plot_type
     """
     # Load pre-computed results
     eval_data = check_and_load_precomputed_results(trackers, dataset, report_name, **kwargs)
-
+    
     # Merge results from multiple runs
     if merge_results:
         eval_data = merge_multiple_runs(eval_data)
@@ -387,7 +388,7 @@ def print_results(trackers, dataset, report_name, merge_results=False, plot_type
     if "success" in plot_types:
         threshold_set_overlap = torch.tensor(eval_data["threshold_set_overlap"])
         ave_success_rate_plot_overlap = torch.tensor(eval_data["ave_success_rate_plot_overlap"])
-
+        print(ave_success_rate_plot_overlap.shape)
         # Index out valid sequences
         auc_curve, auc = get_auc_curve(ave_success_rate_plot_overlap, valid_sequence)
         scores["AUC"] = auc
